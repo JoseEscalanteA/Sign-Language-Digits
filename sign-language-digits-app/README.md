@@ -10,7 +10,7 @@ El modelo `modelo_senas_definitivo.keras` ya fue convertido a TensorFlow.js y co
 
 - Carga automaticamente el modelo al abrir la aplicacion.
 - Inicia la camara del navegador cuando el usuario concede permiso.
-- Muestra la camara como elemento principal y un recuadro derecho para ubicar la mano.
+- Muestra la camara como elemento principal y un recuadro izquierdo para ubicar la mano izquierda.
 - Carga el modelo TensorFlow.js desde `/model/model.json`.
 - Preprocesa la imagen antes de enviarla al modelo como tensor `[1, 64, 64, 1]`.
 - Ejecuta predicciones automaticas cada `200 ms` mientras la camara esta activa.
@@ -102,10 +102,11 @@ Parametros importantes:
 - `inputWidth`: ancho esperado por el modelo.
 - `inputHeight`: alto esperado por el modelo.
 - `inputChannels`: cantidad de canales esperada por el modelo.
-- `mirrorCameraPreview`: voltea horizontalmente la camara y el tensor de entrada para que la vista sea natural para el usuario.
+- `mirrorCameraPreview`: voltea horizontalmente la vista de camara para que sea natural para el usuario.
+- `mirrorModelInput`: controla si la imagen enviada al modelo se voltea horizontalmente. Actualmente es `false` para conservar la orientacion aprendida por el modelo.
 - `captureBoxRatio`: tamaño relativo del recuadro usado para capturar la mano.
-- `captureBoxPosition`: posicion del recorte usado por el modelo. Actualmente es `right`.
-- `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde derecho.
+- `captureBoxPosition`: posicion visual del recuadro usado por el modelo. Actualmente es `left`.
+- `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde lateral configurado.
 - `normalizeInput`: activa o desactiva la normalizacion.
 - `normalizationDivisor`: divisor usado para normalizar pixeles, por ejemplo `255`.
 - `predictionIntervalMs`: intervalo entre predicciones automaticas.
@@ -126,7 +127,7 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 
 1. Abrir la aplicacion y esperar que el modelo cargue automaticamente.
 2. Presionar `Activar camara`.
-3. Ubicar la mano dentro del recuadro derecho.
+3. Ubicar la mano izquierda dentro del recuadro izquierdo.
 4. Observar el digito predicho y el porcentaje de confianza.
 5. Presionar `Detener camara` para finalizar la captura.
 

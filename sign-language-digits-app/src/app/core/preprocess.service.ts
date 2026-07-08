@@ -21,7 +21,7 @@ export class PreprocessService {
     // El recorte debe coincidir con el recuadro visual donde el usuario ubica la mano.
     return tf.tidy(() => {
       const capturedImage = tf.browser.fromPixels(videoElement, 3);
-      const image = config.mirrorCameraPreview
+      const image = config.mirrorModelInput
         ? (capturedImage.reverse(1) as Tensor3D)
         : capturedImage;
       const [height, width] = image.shape;
@@ -44,14 +44,34 @@ export class PreprocessService {
   }
 
   private calculateCropStartX(width: number, cropSize: number, config: AppConfig): number {
-    if (config.captureBoxPosition !== 'right') {
+    const cropPosition = this.getModelCropPosition(config);
+
+    if (cropPosition === 'center') {
       return Math.floor((width - cropSize) / 2);
     }
 
     const offsetRatio = Math.min(Math.max(config.captureBoxHorizontalOffsetRatio, 0), 0.4);
-    const startX = Math.floor(width - cropSize - width * offsetRatio);
+    const startX = cropPosition === 'right'
+      ? Math.floor(width - cropSize - width * offsetRatio)
+      : Math.floor(width * offsetRatio);
 
     return Math.max(0, Math.min(startX, width - cropSize));
+  }
+
+  private getModelCropPosition(config: AppConfig): AppConfig['captureBoxPosition'] {
+    if (config.captureBoxPosition === 'center') {
+      return 'center';
+    }
+
+    // Si la vista esta espejada pero el modelo recibe la orientacion original,
+    // el recuadro visual izquierdo corresponde al lado derecho de la captura real.
+    const previewAndModelUseSameOrientation = config.mirrorCameraPreview === config.mirrorModelInput;
+
+    if (previewAndModelUseSameOrientation) {
+      return config.captureBoxPosition;
+    }
+
+    return config.captureBoxPosition === 'left' ? 'right' : 'left';
   }
 
   private matchModelChannels(image: Tensor3D, inputChannels: number): Tensor3D {
