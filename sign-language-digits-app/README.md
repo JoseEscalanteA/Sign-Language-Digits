@@ -102,6 +102,7 @@ Parametros importantes:
 - `inputWidth`: ancho esperado por el modelo.
 - `inputHeight`: alto esperado por el modelo.
 - `inputChannels`: cantidad de canales esperada por el modelo.
+- `mirrorCameraPreview`: voltea horizontalmente la camara y el tensor de entrada para que la vista sea natural para el usuario.
 - `captureBoxRatio`: tamaño relativo del recuadro usado para capturar la mano.
 - `captureBoxPosition`: posicion del recorte usado por el modelo. Actualmente es `right`.
 - `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde derecho.

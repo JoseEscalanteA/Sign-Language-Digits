@@ -20,7 +20,10 @@ export class PreprocessService {
 
     // El recorte debe coincidir con el recuadro visual donde el usuario ubica la mano.
     return tf.tidy(() => {
-      const image = tf.browser.fromPixels(videoElement, 3);
+      const capturedImage = tf.browser.fromPixels(videoElement, 3);
+      const image = config.mirrorCameraPreview
+        ? (capturedImage.reverse(1) as Tensor3D)
+        : capturedImage;
       const [height, width] = image.shape;
       const captureRatio = Math.min(Math.max(config.captureBoxRatio, 0.2), 1);
       const cropSize = Math.floor(Math.min(width, height) * captureRatio);

@@ -31,6 +31,7 @@
         <video
           #videoElement
           class="h-full w-full object-cover"
+          [class.-scale-x-100]="config.mirrorCameraPreview"
           autoplay
           muted
           playsinline

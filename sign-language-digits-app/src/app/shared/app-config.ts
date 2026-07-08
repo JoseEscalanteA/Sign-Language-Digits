@@ -3,6 +3,7 @@ export interface AppConfig {
   inputWidth: number;
   inputHeight: number;
   inputChannels: number;
+  mirrorCameraPreview: boolean;
   captureBoxRatio: number;
   captureBoxPosition: 'center' | 'right';
   captureBoxHorizontalOffsetRatio: number;
@@ -17,6 +18,7 @@ export const APP_CONFIG: AppConfig = {
   inputWidth: 64,
   inputHeight: 64,
   inputChannels: 1,
+  mirrorCameraPreview: true,
   captureBoxRatio: 0.58,
   captureBoxPosition: 'right',
   captureBoxHorizontalOffsetRatio: 0.08,
