@@ -1,11 +1,10 @@
-import { Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CameraService } from './core/camera.service';
 import {
   MISSING_MODEL_MESSAGE,
   ModelService,
   type PredictionResult,
 } from './core/model.service';
-import { PracticeResult, PracticeService } from './core/practice.service';
 import { PreprocessService } from './core/preprocess.service';
 import { APP_CONFIG } from './shared/app-config';
 
@@ -15,30 +14,41 @@ import { APP_CONFIG } from './shared/app-config';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnDestroy {
+export class App implements OnInit, OnDestroy {
   @ViewChild('videoElement') private videoElement?: ElementRef<HTMLVideoElement>;
 
   private readonly cameraService = inject(CameraService);
   private readonly modelService = inject(ModelService);
   private readonly preprocessService = inject(PreprocessService);
-  private readonly practiceService = inject(PracticeService);
+  private predictionIntervalId: number | null = null;
 
   readonly config = APP_CONFIG;
   readonly missingModelMessage = MISSING_MODEL_MESSAGE;
 
   cameraReady = false;
   modelLoaded = false;
-  modelLoading = false;
+  modelLoading = true;
   predicting = false;
   errorMessage: string | null = null;
-  cameraMessage = 'Camara detenida. Presiona "Iniciar camara" para comenzar.';
-  modelMessage = this.missingModelMessage;
+  cameraMessage = 'Camara desactivada. Activa la camara para iniciar predicciones.';
+  modelMessage = 'Cargando modelo TensorFlow.js...';
   prediction: PredictionResult | null = null;
-  practiceTarget = this.practiceService.createTarget(this.config.classLabels);
-  practiceResult: PracticeResult | null = null;
 
-  get canPredict(): boolean {
-    return this.cameraReady && this.modelLoaded && !this.predicting;
+  get automaticPredictionActive(): boolean {
+    return this.cameraReady && this.modelLoaded;
+  }
+
+  ngOnInit(): void {
+    void this.loadModel();
+  }
+
+  async toggleCamera(): Promise<void> {
+    if (this.cameraReady) {
+      this.stopCamera();
+      return;
+    }
+
+    await this.startCamera();
   }
 
   async startCamera(): Promise<void> {
@@ -53,7 +63,10 @@ export class App implements OnDestroy {
       this.errorMessage = null;
       await this.cameraService.start(video);
       this.cameraReady = true;
-      this.cameraMessage = 'Camara activa. Ubica la mano dentro del marco central.';
+      this.cameraMessage = this.modelLoaded
+        ? 'Prediccion automatica activa. Ubica la mano dentro del marco.'
+        : 'Camara activa. Esperando que el modelo termine de cargar.';
+      this.startPredictionLoop();
     } catch (error) {
       this.cameraReady = false;
       this.errorMessage = this.getErrorMessage(error);
@@ -62,19 +75,21 @@ export class App implements OnDestroy {
   }
 
   stopCamera(): void {
+    this.stopPredictionLoop();
     this.cameraService.stop();
     this.cameraReady = false;
-    this.cameraMessage = 'Camara detenida.';
+    this.cameraMessage = 'Camara desactivada. La ultima prediccion queda visible como referencia.';
   }
 
-  async loadModel(): Promise<void> {
+  private async loadModel(): Promise<void> {
     try {
       this.errorMessage = null;
       this.modelLoading = true;
       this.modelMessage = `Cargando modelo desde ${this.config.modelUrl}...`;
       await this.modelService.loadModel(this.config.modelUrl);
       this.modelLoaded = true;
-      this.modelMessage = 'Modelo cargado correctamente. Ya se pueden realizar predicciones.';
+      this.modelMessage = 'Modelo cargado. Las predicciones se ejecutan automaticamente con la camara activa.';
+      this.startPredictionLoop();
     } catch (error) {
       this.modelLoaded = false;
       this.modelMessage = this.missingModelMessage;
@@ -84,42 +99,32 @@ export class App implements OnDestroy {
     }
   }
 
-  async predict(): Promise<void> {
+  private async runPredictionOnce(): Promise<void> {
     const video = this.videoElement?.nativeElement;
 
-    if (!video) {
-      this.errorMessage = 'No se encontro el elemento de video de la aplicacion.';
-      return;
-    }
-
-    if (!this.canPredict) {
-      this.errorMessage = 'Para predecir se necesita la camara activa y el modelo cargado.';
+    if (!video || !this.cameraReady || !this.modelLoaded || this.predicting) {
       return;
     }
 
     try {
-      this.errorMessage = null;
       this.predicting = true;
       const inputTensor = await this.preprocessService.createInputTensor(video, this.config);
 
       try {
         this.prediction = await this.modelService.predict(inputTensor, this.config.classLabels);
-        this.practiceResult = this.practiceService.evaluate(this.practiceTarget, this.prediction.label);
+        this.errorMessage = null;
       } finally {
         inputTensor.dispose();
       }
     } catch (error) {
-      this.errorMessage = this.getErrorMessage(error);
+      const message = this.getErrorMessage(error);
+
+      if (!message.startsWith('La camara aun no tiene')) {
+        this.errorMessage = message;
+      }
     } finally {
       this.predicting = false;
     }
-  }
-
-  nextPracticeTarget(): void {
-    this.practiceTarget = this.practiceService.createTarget(this.config.classLabels, this.practiceTarget);
-    this.practiceResult = null;
-    this.prediction = null;
-    this.errorMessage = null;
   }
 
   formatConfidence(confidence: number): string {
@@ -131,7 +136,30 @@ export class App implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopPredictionLoop();
     this.cameraService.stop();
+  }
+
+  private startPredictionLoop(): void {
+    if (this.predictionIntervalId !== null || !this.cameraReady || !this.modelLoaded) {
+      return;
+    }
+
+    this.cameraMessage = 'Prediccion automatica activa. Ubica la mano dentro del marco.';
+    void this.runPredictionOnce();
+
+    this.predictionIntervalId = window.setInterval(() => {
+      void this.runPredictionOnce();
+    }, this.config.predictionIntervalMs);
+  }
+
+  private stopPredictionLoop(): void {
+    if (this.predictionIntervalId === null) {
+      return;
+    }
+
+    window.clearInterval(this.predictionIntervalId);
+    this.predictionIntervalId = null;
   }
 
   private getErrorMessage(error: unknown): string {

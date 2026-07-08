@@ -4,7 +4,7 @@
 
 Este proyecto corresponde al punto 7 del Taller 3 de Inteligencia Artificial de la Universidad de Tarapaca: **Redes Neuronales Convolucionales (CNN): Sign Language Digits**.
 
-El objetivo es construir una aplicacion web que permita practicar digitos en lenguaje de señas usando la camara del navegador y un modelo entrenado con el dataset Sign Language Digits.
+El objetivo es construir una aplicacion web que permita reconocer digitos en lenguaje de señas usando la camara del navegador y un modelo entrenado con el dataset Sign Language Digits.
 
 La aplicacion carga el modelo convertido a TensorFlow.js desde:
 
@@ -18,10 +18,10 @@ El modelo final ya fue convertido a TensorFlow.js. La aplicacion debe:
 
 - Permitir iniciar la camara del navegador.
 - Mostrar un area visual para ubicar la mano.
-- Tener una estructura modular para cargar el modelo TensorFlow.js.
+- Cargar automaticamente el modelo TensorFlow.js al iniciar la aplicacion.
 - Preparar la imagen con tamaño y normalizacion parametrizados.
-- Mostrar la prediccion real solo cuando exista un modelo cargado.
-- Incluir un modo de practica que compare el digito solicitado con la prediccion del modelo.
+- Ejecutar predicciones automaticas mientras la camara este activa.
+- Mostrar la prediccion real solo cuando exista un modelo cargado y una imagen de camara disponible.
 
 No se deben simular predicciones como si fueran resultados reales del modelo.
 
@@ -57,12 +57,6 @@ src/app/core/preprocess.service.ts
 ```
 
 Transforma la imagen del video antes de enviarla al modelo.
-
-```text
-src/app/core/practice.service.ts
-```
-
-Controla el modo de practica.
 
 ```text
 public/model/

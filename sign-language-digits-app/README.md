@@ -2,17 +2,18 @@
 
 Aplicacion web del punto 7 del Taller 3 de Inteligencia Artificial de la Universidad de Tarapaca: **Redes Neuronales Convolucionales (CNN): Sign Language Digits**.
 
-La aplicacion permite practicar digitos en lenguaje de señas usando la camara del navegador y un modelo CNN convertido a TensorFlow.js.
+La aplicacion permite reconocer digitos en lenguaje de señas usando la camara del navegador y un modelo CNN convertido a TensorFlow.js.
 
 ## Estado actual
 
 El modelo `modelo_senas_definitivo.keras` ya fue convertido a TensorFlow.js y conectado a la app. La aplicacion:
 
-- Inicia la camara del navegador.
+- Carga automaticamente el modelo al abrir la aplicacion.
+- Inicia la camara del navegador cuando el usuario concede permiso.
 - Muestra un marco visual para ubicar la mano.
-- Tiene modo de practica con un numero objetivo.
 - Carga el modelo TensorFlow.js desde `/model/model.json`.
 - Preprocesa la imagen antes de enviarla al modelo como tensor `[1, 64, 64, 1]`.
+- Ejecuta predicciones automaticas cada `500 ms` mientras la camara esta activa.
 - No simula predicciones si el modelo no esta disponible.
 - Muestra `Modelo no encontrado. Debe convertirse el archivo .keras a TensorFlow.js` si falta `model.json`.
 
@@ -103,6 +104,7 @@ Parametros importantes:
 - `inputChannels`: cantidad de canales esperada por el modelo.
 - `normalizeInput`: activa o desactiva la normalizacion.
 - `normalizationDivisor`: divisor usado para normalizar pixeles, por ejemplo `255`.
+- `predictionIntervalMs`: intervalo entre predicciones automaticas.
 - `classLabels`: orden de clases esperado por el modelo.
 
 Para el modelo `modelo_senas_definitivo.keras`, la app queda configurada con:
@@ -118,11 +120,11 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 
 ## Uso
 
-1. Presionar `Iniciar camara`.
+1. Abrir la aplicacion y esperar que el modelo cargue automaticamente.
+2. Presionar `Activar camara`.
 2. Ubicar la mano dentro del marco central.
-3. Presionar `Cargar modelo TensorFlow.js`.
-4. Presionar `Predecir signo`.
-5. En modo practica, comparar el numero solicitado con la prediccion del modelo.
+3. Observar el digito predicho y el porcentaje de confianza.
+4. Presionar `Detener camara` para finalizar la captura.
 
 ## Estructura relevante
 
@@ -130,7 +132,6 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 src/app/core/camera.service.ts       # Camara del navegador
 src/app/core/model.service.ts        # Carga y prediccion TensorFlow.js
 src/app/core/preprocess.service.ts   # Recorte, resize y normalizacion
-src/app/core/practice.service.ts     # Modo practica
 src/app/shared/app-config.ts         # Parametros del modelo
 public/model/README_MODEL.md         # Detalle del modelo convertido
 ```
