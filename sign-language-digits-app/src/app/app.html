@@ -107,9 +107,18 @@
           <p class="max-w-xl rounded-2xl border border-white/10 bg-black/55 px-4 py-3 text-sm text-neutral-300 backdrop-blur-md">
             {{ cameraMessage }}
           </p>
-          <p class="hidden rounded-2xl border border-white/10 bg-black/55 px-4 py-3 text-xs text-neutral-400 backdrop-blur-md md:block">
-            {{ config.inputWidth }}x{{ config.inputHeight }} gris - {{ config.predictionIntervalMs }} ms
-          </p>
+          <div class="hidden rounded-2xl border border-white/10 bg-black/55 p-3 text-xs text-neutral-400 backdrop-blur-md md:block">
+            <p class="mb-2 font-medium uppercase tracking-[0.2em] text-neutral-500">Entrada al modelo</p>
+            <canvas
+              #modelInputCanvas
+              width="64"
+              height="64"
+              class="size-24 rounded-xl border border-white/10 bg-black [image-rendering:pixelated]"
+            ></canvas>
+            <p class="mt-2 text-[0.68rem] text-neutral-500">
+              {{ config.inputWidth }}x{{ config.inputHeight }} gris
+            </p>
+          </div>
         </div>
       </article>
 

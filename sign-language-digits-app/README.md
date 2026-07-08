@@ -11,6 +11,7 @@ El modelo `modelo_senas_definitivo.keras` ya fue convertido a TensorFlow.js y co
 - Carga automaticamente el modelo al abrir la aplicacion.
 - Inicia la camara del navegador cuando el usuario concede permiso.
 - Muestra la camara como elemento principal y un recuadro izquierdo para ubicar la mano izquierda.
+- Muestra una mini vista `Entrada al modelo` con la imagen final `64x64` en escala de grises que recibe la CNN.
 - Carga el modelo TensorFlow.js desde `/model/model.json`.
 - Preprocesa la imagen antes de enviarla al modelo como tensor `[1, 64, 64, 1]`.
 - Ejecuta predicciones automaticas cada `200 ms` mientras la camara esta activa.
@@ -129,7 +130,8 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 2. Presionar `Activar camara`.
 3. Ubicar la mano izquierda dentro del recuadro izquierdo.
 4. Observar el digito predicho y el porcentaje de confianza.
-5. Presionar `Detener camara` para finalizar la captura.
+5. Revisar la mini vista `Entrada al modelo` si una prediccion falla o parece inestable.
+6. Presionar `Detener camara` para finalizar la captura.
 
 ## Estructura relevante
 

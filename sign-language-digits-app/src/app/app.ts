@@ -16,6 +16,7 @@ import { APP_CONFIG } from './shared/app-config';
 })
 export class App implements OnInit, OnDestroy {
   @ViewChild('videoElement') private videoElement?: ElementRef<HTMLVideoElement>;
+  @ViewChild('modelInputCanvas') private modelInputCanvas?: ElementRef<HTMLCanvasElement>;
 
   private readonly cameraService = inject(CameraService);
   private readonly modelService = inject(ModelService);
@@ -108,7 +109,11 @@ export class App implements OnInit, OnDestroy {
 
     try {
       this.predicting = true;
-      const inputTensor = await this.preprocessService.createInputTensor(video, this.config);
+      const inputTensor = await this.preprocessService.createInputTensor(
+        video,
+        this.config,
+        this.modelInputCanvas?.nativeElement,
+      );
 
       try {
         this.prediction = await this.modelService.predict(inputTensor, this.config.classLabels);

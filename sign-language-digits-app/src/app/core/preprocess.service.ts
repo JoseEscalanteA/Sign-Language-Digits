@@ -11,6 +11,7 @@ export class PreprocessService {
   async createInputTensor(
     videoElement: HTMLVideoElement,
     config: AppConfig = APP_CONFIG,
+    previewCanvas?: HTMLCanvasElement,
   ): Promise<Tensor4D> {
     if (videoElement.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
       throw new Error('La camara aun no tiene una imagen disponible.');
@@ -19,7 +20,7 @@ export class PreprocessService {
     const tf = await this.loadTensorFlow();
 
     // El recorte debe coincidir con el recuadro visual donde el usuario ubica la mano.
-    return tf.tidy(() => {
+    const [inputTensor, previewTensor] = tf.tidy(() => {
       const capturedImage = tf.browser.fromPixels(videoElement, 3);
       const image = config.mirrorModelInput
         ? (capturedImage.reverse(1) as Tensor3D)
@@ -35,12 +36,23 @@ export class PreprocessService {
         .toFloat() as Tensor3D;
 
       const modelImage = this.matchModelChannels(resized, config.inputChannels);
+      const previewTensor = modelImage.clipByValue(0, 255).toInt() as Tensor3D;
       const normalized = config.normalizeInput
         ? modelImage.div(config.normalizationDivisor)
         : modelImage;
 
-      return normalized.expandDims(0) as Tensor4D;
+      return [normalized.expandDims(0) as Tensor4D, previewTensor] as [Tensor4D, Tensor3D];
     });
+
+    try {
+      if (previewCanvas) {
+        await tf.browser.toPixels(previewTensor, previewCanvas);
+      }
+    } finally {
+      previewTensor.dispose();
+    }
+
+    return inputTensor;
   }
 
   private calculateCropStartX(width: number, cropSize: number, config: AppConfig): number {
