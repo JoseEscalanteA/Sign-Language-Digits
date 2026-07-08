@@ -1,0 +1,7 @@
+:host {
+  display: block;
+}
+
+video {
+  background: radial-gradient(circle at center, #1e293b, #020617 70%);
+}
