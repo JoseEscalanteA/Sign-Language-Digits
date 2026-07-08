@@ -10,10 +10,10 @@ El modelo `modelo_senas_definitivo.keras` ya fue convertido a TensorFlow.js y co
 
 - Carga automaticamente el modelo al abrir la aplicacion.
 - Inicia la camara del navegador cuando el usuario concede permiso.
-- Muestra un marco visual para ubicar la mano.
+- Muestra la camara como elemento principal y un recuadro derecho para ubicar la mano.
 - Carga el modelo TensorFlow.js desde `/model/model.json`.
 - Preprocesa la imagen antes de enviarla al modelo como tensor `[1, 64, 64, 1]`.
-- Ejecuta predicciones automaticas cada `500 ms` mientras la camara esta activa.
+- Ejecuta predicciones automaticas cada `200 ms` mientras la camara esta activa.
 - No simula predicciones si el modelo no esta disponible.
 - Muestra `Modelo no encontrado. Debe convertirse el archivo .keras a TensorFlow.js` si falta `model.json`.
 
@@ -102,6 +102,9 @@ Parametros importantes:
 - `inputWidth`: ancho esperado por el modelo.
 - `inputHeight`: alto esperado por el modelo.
 - `inputChannels`: cantidad de canales esperada por el modelo.
+- `captureBoxRatio`: tamaño relativo del recuadro usado para capturar la mano.
+- `captureBoxPosition`: posicion del recorte usado por el modelo. Actualmente es `right`.
+- `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde derecho.
 - `normalizeInput`: activa o desactiva la normalizacion.
 - `normalizationDivisor`: divisor usado para normalizar pixeles, por ejemplo `255`.
 - `predictionIntervalMs`: intervalo entre predicciones automaticas.
@@ -122,9 +125,9 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 
 1. Abrir la aplicacion y esperar que el modelo cargue automaticamente.
 2. Presionar `Activar camara`.
-2. Ubicar la mano dentro del marco central.
-3. Observar el digito predicho y el porcentaje de confianza.
-4. Presionar `Detener camara` para finalizar la captura.
+3. Ubicar la mano dentro del recuadro derecho.
+4. Observar el digito predicho y el porcentaje de confianza.
+5. Presionar `Detener camara` para finalizar la captura.
 
 ## Estructura relevante
 

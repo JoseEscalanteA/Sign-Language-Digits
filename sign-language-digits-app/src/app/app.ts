@@ -64,7 +64,7 @@ export class App implements OnInit, OnDestroy {
       await this.cameraService.start(video);
       this.cameraReady = true;
       this.cameraMessage = this.modelLoaded
-        ? 'Prediccion automatica activa. Ubica la mano dentro del marco.'
+        ? 'Prediccion automatica activa. Ubica la mano en el recuadro derecho.'
         : 'Camara activa. Esperando que el modelo termine de cargar.';
       this.startPredictionLoop();
     } catch (error) {
@@ -145,7 +145,7 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
-    this.cameraMessage = 'Prediccion automatica activa. Ubica la mano dentro del marco.';
+    this.cameraMessage = 'Prediccion automatica activa. Ubica la mano en el recuadro derecho.';
     void this.runPredictionOnce();
 
     this.predictionIntervalId = window.setInterval(() => {

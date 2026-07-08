@@ -17,7 +17,7 @@ La aplicacion carga el modelo convertido a TensorFlow.js desde:
 El modelo final ya fue convertido a TensorFlow.js. La aplicacion debe:
 
 - Permitir iniciar la camara del navegador.
-- Mostrar un area visual para ubicar la mano.
+- Mostrar la camara como elemento principal y un recuadro derecho para ubicar la mano.
 - Cargar automaticamente el modelo TensorFlow.js al iniciar la aplicacion.
 - Preparar la imagen con tamaño y normalizacion parametrizados.
 - Ejecutar predicciones automaticas mientras la camara este activa.
@@ -73,6 +73,7 @@ Carpeta reservada para `model.json` y los archivos `.bin` generados por TensorFl
 - Evitar acoplar valores fijos de entrada directamente en los servicios. Usar `APP_CONFIG`.
 - No agregar archivos del modelo al azar. Solo copiar el modelo final convertido cuando el equipo lo entregue.
 - El modelo actual espera tensores con forma `[1, 64, 64, 1]`: imagen 64x64 en escala de grises normalizada dividiendo por 255.
+- El recorte de preprocesamiento debe coincidir con el recuadro derecho mostrado sobre la camara.
 
 ## Pendiente del equipo
 

@@ -4,6 +4,8 @@ export interface AppConfig {
   inputHeight: number;
   inputChannels: number;
   captureBoxRatio: number;
+  captureBoxPosition: 'center' | 'right';
+  captureBoxHorizontalOffsetRatio: number;
   normalizeInput: boolean;
   normalizationDivisor: number;
   predictionIntervalMs: number;
@@ -15,9 +17,11 @@ export const APP_CONFIG: AppConfig = {
   inputWidth: 64,
   inputHeight: 64,
   inputChannels: 1,
-  captureBoxRatio: 0.72,
+  captureBoxRatio: 0.58,
+  captureBoxPosition: 'right',
+  captureBoxHorizontalOffsetRatio: 0.08,
   normalizeInput: true,
   normalizationDivisor: 255,
-  predictionIntervalMs: 500,
+  predictionIntervalMs: 200,
   classLabels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
 };

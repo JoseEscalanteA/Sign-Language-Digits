@@ -18,13 +18,13 @@ export class PreprocessService {
 
     const tf = await this.loadTensorFlow();
 
-    // Se recorta el centro porque coincide con el marco visual donde el usuario ubica la mano.
+    // El recorte debe coincidir con el recuadro visual donde el usuario ubica la mano.
     return tf.tidy(() => {
       const image = tf.browser.fromPixels(videoElement, 3);
       const [height, width] = image.shape;
       const captureRatio = Math.min(Math.max(config.captureBoxRatio, 0.2), 1);
       const cropSize = Math.floor(Math.min(width, height) * captureRatio);
-      const startX = Math.floor((width - cropSize) / 2);
+      const startX = this.calculateCropStartX(width, cropSize, config);
       const startY = Math.floor((height - cropSize) / 2);
       const cropped = image.slice([startY, startX, 0], [cropSize, cropSize, 3]);
       const resized = tf.image
@@ -38,6 +38,17 @@ export class PreprocessService {
 
       return normalized.expandDims(0) as Tensor4D;
     });
+  }
+
+  private calculateCropStartX(width: number, cropSize: number, config: AppConfig): number {
+    if (config.captureBoxPosition !== 'right') {
+      return Math.floor((width - cropSize) / 2);
+    }
+
+    const offsetRatio = Math.min(Math.max(config.captureBoxHorizontalOffsetRatio, 0), 0.4);
+    const startX = Math.floor(width - cropSize - width * offsetRatio);
+
+    return Math.max(0, Math.min(startX, width - cropSize));
   }
 
   private matchModelChannels(image: Tensor3D, inputChannels: number): Tensor3D {
