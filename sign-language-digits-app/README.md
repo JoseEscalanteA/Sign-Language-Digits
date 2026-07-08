@@ -104,7 +104,7 @@ Parametros importantes:
 - `inputHeight`: alto esperado por el modelo.
 - `inputChannels`: cantidad de canales esperada por el modelo.
 - `mirrorCameraPreview`: voltea horizontalmente la vista de camara para que sea natural para el usuario.
-- `mirrorModelInput`: controla si la imagen enviada al modelo se voltea horizontalmente. Actualmente es `false` para conservar la orientacion aprendida por el modelo.
+- `mirrorModelInput`: controla si la imagen enviada al modelo se voltea horizontalmente. Actualmente es `true` para que coincida con la vista de camara usada por el usuario.
 - `captureBoxRatio`: tamaño relativo del recuadro usado para capturar la mano.
 - `captureBoxPosition`: posicion visual del recuadro usado por el modelo. Actualmente es `left`.
 - `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde lateral configurado.

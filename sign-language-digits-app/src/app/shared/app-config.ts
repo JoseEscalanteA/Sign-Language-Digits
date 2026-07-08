@@ -20,7 +20,7 @@ export const APP_CONFIG: AppConfig = {
   inputHeight: 64,
   inputChannels: 1,
   mirrorCameraPreview: true,
-  mirrorModelInput: false,
+  mirrorModelInput: true,
   captureBoxRatio: 0.58,
   captureBoxPosition: 'left',
   captureBoxHorizontalOffsetRatio: 0.08,
