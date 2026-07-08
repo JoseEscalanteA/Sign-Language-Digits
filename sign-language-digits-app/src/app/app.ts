@@ -3,10 +3,11 @@ import { CameraService } from './core/camera.service';
 import {
   MISSING_MODEL_MESSAGE,
   ModelService,
+  type PredictionScore,
   type PredictionResult,
 } from './core/model.service';
 import { PreprocessService } from './core/preprocess.service';
-import { APP_CONFIG } from './shared/app-config';
+import { APP_CONFIG, type AppConfig } from './shared/app-config';
 
 @Component({
   selector: 'app-root',
@@ -22,8 +23,9 @@ export class App implements OnInit, OnDestroy {
   private readonly modelService = inject(ModelService);
   private readonly preprocessService = inject(PreprocessService);
   private predictionIntervalId: number | null = null;
+  private predictionHistory: number[][] = [];
 
-  readonly config = APP_CONFIG;
+  readonly config: AppConfig = { ...APP_CONFIG };
   readonly missingModelMessage = MISSING_MODEL_MESSAGE;
 
   cameraReady = false;
@@ -79,6 +81,7 @@ export class App implements OnInit, OnDestroy {
     this.stopPredictionLoop();
     this.cameraService.stop();
     this.cameraReady = false;
+    this.predictionHistory = [];
     this.cameraMessage = 'Camara desactivada. La ultima prediccion queda visible como referencia.';
   }
 
@@ -116,7 +119,8 @@ export class App implements OnInit, OnDestroy {
       );
 
       try {
-        this.prediction = await this.modelService.predict(inputTensor, this.config.classLabels);
+        const rawPrediction = await this.modelService.predict(inputTensor, this.config.classLabels);
+        this.prediction = this.smoothPrediction(rawPrediction);
         this.errorMessage = null;
       } finally {
         inputTensor.dispose();
@@ -140,6 +144,11 @@ export class App implements OnInit, OnDestroy {
     return Math.max(0, Math.min(confidence * 100, 100));
   }
 
+  setPreprocessingMode(mode: AppConfig['preprocessingMode']): void {
+    this.config.preprocessingMode = mode;
+    this.predictionHistory = [];
+  }
+
   ngOnDestroy(): void {
     this.stopPredictionLoop();
     this.cameraService.stop();
@@ -151,6 +160,7 @@ export class App implements OnInit, OnDestroy {
     }
 
     this.cameraMessage = 'Prediccion automatica activa. Ubica la mano izquierda en el recuadro.';
+    this.predictionHistory = [];
     void this.runPredictionOnce();
 
     this.predictionIntervalId = window.setInterval(() => {
@@ -165,6 +175,40 @@ export class App implements OnInit, OnDestroy {
 
     window.clearInterval(this.predictionIntervalId);
     this.predictionIntervalId = null;
+  }
+
+  private smoothPrediction(rawPrediction: PredictionResult): PredictionResult {
+    const valuesByLabel = new Map(
+      rawPrediction.scores.map((score) => [score.label, score.confidence] as const),
+    );
+    const currentVector = this.config.classLabels.map((label) => valuesByLabel.get(label) ?? 0);
+
+    this.predictionHistory.push(currentVector);
+
+    if (this.predictionHistory.length > this.config.predictionSmoothingWindow) {
+      this.predictionHistory.shift();
+    }
+
+    const averagedScores: PredictionScore[] = this.config.classLabels.map((label, index) => {
+      const confidence = this.predictionHistory.reduce(
+        (sum, vector) => sum + (vector[index] ?? 0),
+        0,
+      ) / this.predictionHistory.length;
+
+      return { label, confidence };
+    });
+    const scores = averagedScores.sort((a, b) => b.confidence - a.confidence);
+    const bestScore = scores[0];
+
+    if (!bestScore) {
+      return rawPrediction;
+    }
+
+    return {
+      label: bestScore.label,
+      confidence: bestScore.confidence,
+      scores,
+    };
   }
 
   private getErrorMessage(error: unknown): string {

@@ -15,6 +15,8 @@ El modelo `modelo_senas_definitivo.keras` ya fue convertido a TensorFlow.js y co
 - Carga el modelo TensorFlow.js desde `/model/model.json`.
 - Preprocesa la imagen antes de enviarla al modelo como tensor `[1, 64, 64, 1]`.
 - Ejecuta predicciones automaticas cada `200 ms` mientras la camara esta activa.
+- Permite alternar entre preprocesamiento `Normal` y `Contraste` para mejorar la entrada sin reentrenar el modelo.
+- Promedia las ultimas predicciones para reducir saltos entre clases.
 - No simula predicciones si el modelo no esta disponible.
 - Muestra `Modelo no encontrado. Debe convertirse el archivo .keras a TensorFlow.js` si falta `model.json`.
 
@@ -105,12 +107,15 @@ Parametros importantes:
 - `inputChannels`: cantidad de canales esperada por el modelo.
 - `mirrorCameraPreview`: voltea horizontalmente la vista de camara para que sea natural para el usuario.
 - `mirrorModelInput`: controla si la imagen enviada al modelo se voltea horizontalmente. Actualmente es `true` para que coincida con la vista de camara usada por el usuario.
+- `preprocessingMode`: modo de preprocesamiento inicial. Puede ser `normal` o `local-contrast`.
+- `localContrastEpsilon`: valor pequeño para evitar division por cero al aplicar contraste local.
 - `captureBoxRatio`: tamaño relativo del recuadro usado para capturar la mano.
 - `captureBoxPosition`: posicion visual del recuadro usado por el modelo. Actualmente es `left`.
 - `captureBoxHorizontalOffsetRatio`: separacion horizontal del recuadro respecto del borde lateral configurado.
 - `normalizeInput`: activa o desactiva la normalizacion.
 - `normalizationDivisor`: divisor usado para normalizar pixeles, por ejemplo `255`.
 - `predictionIntervalMs`: intervalo entre predicciones automaticas.
+- `predictionSmoothingWindow`: cantidad de frames usados para promediar probabilidades.
 - `classLabels`: orden de clases esperado por el modelo.
 
 Para el modelo `modelo_senas_definitivo.keras`, la app queda configurada con:
@@ -131,7 +136,8 @@ clases: ['0','1','2','3','4','5','6','7','8','9']
 3. Ubicar la mano izquierda dentro del recuadro izquierdo.
 4. Observar el digito predicho y el porcentaje de confianza.
 5. Revisar la mini vista `Entrada al modelo` si una prediccion falla o parece inestable.
-6. Presionar `Detener camara` para finalizar la captura.
+6. Probar `Normal` o `Contraste` para comparar que entrada reconoce mejor el modelo.
+7. Presionar `Detener camara` para finalizar la captura.
 
 ## Estructura relevante
 

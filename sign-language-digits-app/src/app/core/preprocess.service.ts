@@ -36,10 +36,8 @@ export class PreprocessService {
         .toFloat() as Tensor3D;
 
       const modelImage = this.matchModelChannels(resized, config.inputChannels);
-      const previewTensor = modelImage.clipByValue(0, 255).toInt() as Tensor3D;
-      const normalized = config.normalizeInput
-        ? modelImage.div(config.normalizationDivisor)
-        : modelImage;
+      const normalized = this.normalizeModelImage(modelImage, config);
+      const previewTensor = this.createPreviewTensor(normalized, modelImage, config);
 
       return [normalized.expandDims(0) as Tensor4D, previewTensor] as [Tensor4D, Tensor3D];
     });
@@ -53,6 +51,27 @@ export class PreprocessService {
     }
 
     return inputTensor;
+  }
+
+  private normalizeModelImage(image: Tensor3D, config: AppConfig): Tensor3D {
+    if (!config.normalizeInput) {
+      return image;
+    }
+
+    if (config.preprocessingMode === 'local-contrast') {
+      const minValue = image.min();
+      const maxValue = image.max();
+
+      return image.sub(minValue).div(maxValue.sub(minValue).add(config.localContrastEpsilon)) as Tensor3D;
+    }
+
+    return image.div(config.normalizationDivisor) as Tensor3D;
+  }
+
+  private createPreviewTensor(normalized: Tensor3D, original: Tensor3D, config: AppConfig): Tensor3D {
+    const previewSource = config.normalizeInput ? normalized.mul(255) : original;
+
+    return previewSource.clipByValue(0, 255).toInt() as Tensor3D;
   }
 
   private calculateCropStartX(width: number, cropSize: number, config: AppConfig): number {

@@ -67,8 +67,8 @@
               </div>
             </div>
 
-            <div class="mt-4 space-y-2">
-              @for (score of currentPrediction.scores.slice(0, 3); track score.label) {
+            <div class="mt-4 grid grid-cols-2 gap-x-3 gap-y-2">
+              @for (score of currentPrediction.scores; track score.label) {
                 <div>
                   <div class="mb-1 flex justify-between text-[0.7rem] text-neutral-400">
                     <span>{{ score.label }}</span>
@@ -107,7 +107,7 @@
           <p class="max-w-xl rounded-2xl border border-white/10 bg-black/55 px-4 py-3 text-sm text-neutral-300 backdrop-blur-md">
             {{ cameraMessage }}
           </p>
-          <div class="hidden rounded-2xl border border-white/10 bg-black/55 p-3 text-xs text-neutral-400 backdrop-blur-md md:block">
+          <div class="pointer-events-auto hidden rounded-2xl border border-white/10 bg-black/55 p-3 text-xs text-neutral-400 backdrop-blur-md md:block">
             <p class="mb-2 font-medium uppercase tracking-[0.2em] text-neutral-500">Entrada al modelo</p>
             <canvas
               #modelInputCanvas
@@ -117,6 +117,35 @@
             ></canvas>
             <p class="mt-2 text-[0.68rem] text-neutral-500">
               {{ config.inputWidth }}x{{ config.inputHeight }} gris
+            </p>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="rounded-full border px-3 py-1.5 text-[0.68rem] font-medium transition"
+                [class.border-white]="config.preprocessingMode === 'normal'"
+                [class.bg-white]="config.preprocessingMode === 'normal'"
+                [class.text-neutral-950]="config.preprocessingMode === 'normal'"
+                [class.border-white/15]="config.preprocessingMode !== 'normal'"
+                [class.text-neutral-300]="config.preprocessingMode !== 'normal'"
+                (click)="setPreprocessingMode('normal')"
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                class="rounded-full border px-3 py-1.5 text-[0.68rem] font-medium transition"
+                [class.border-white]="config.preprocessingMode === 'local-contrast'"
+                [class.bg-white]="config.preprocessingMode === 'local-contrast'"
+                [class.text-neutral-950]="config.preprocessingMode === 'local-contrast'"
+                [class.border-white/15]="config.preprocessingMode !== 'local-contrast'"
+                [class.text-neutral-300]="config.preprocessingMode !== 'local-contrast'"
+                (click)="setPreprocessingMode('local-contrast')"
+              >
+                Contraste
+              </button>
+            </div>
+            <p class="mt-2 text-[0.68rem] text-neutral-500">
+              Suavizado: {{ config.predictionSmoothingWindow }} frames
             </p>
           </div>
         </div>
