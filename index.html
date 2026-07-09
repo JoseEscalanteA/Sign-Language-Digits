@@ -91,7 +91,6 @@
                 <button class="btn btn-primary" id="btnIniciar" onclick="mostrarCamara()">Iniciar cámara</button>
                 <button class="btn btn-secondary" id="btnCambiar" onclick="cambiarCamara()">Cambiar cámara</button>
                 <button class="btn btn-success" id="btnModelo" onclick="cargarModelo()">Cargar modelo</button>
-                <button class="btn btn-dark" id="btnPredecir" onclick="predecir()">Predecir</button>
               </div>
 
               <div class="mt-3">
@@ -120,7 +119,7 @@
             <div class="pred-card mb-4">
               <h3>Modo práctica</h3>
               <p class="small-note">
-                Presiona “Nuevo número”, realiza el signo solicitado y luego presiona “Predecir y comprobar”.
+                Presiona “Nuevo número” y realiza el signo solicitado. La app comprobará automáticamente la predicción.
               </p>
 
               <div class="alert alert-primary">
@@ -130,7 +129,6 @@
 
               <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-outline-primary" onclick="nuevoNumero()">Nuevo número</button>
-                <button class="btn btn-outline-dark" onclick="predecirYComprobar()">Predecir y comprobar</button>
               </div>
 
               <div class="mt-3">
@@ -165,6 +163,9 @@
 
       const TAMANO_CAMARA = 400;
       const INPUT_SIZE = 64;
+      const VIDEO_CON_DATOS = 2;
+      const INTERVALO_PREDICCION_MS = 500;
+      const CONFIANZA_MINIMA = 0.50;
 
       // Si tienes el modelo dentro de una carpeta model/, cambia esto a:
       // const MODEL_PATH = "./model/model.json";
@@ -187,6 +188,8 @@
       let openCvListo = false;
       let numeroActual = null;
       let ultimaPrediccion = null;
+      let intervaloPrediccion = null;
+      let prediccionEnCurso = false;
 
       // =========================
       // Estado visual
@@ -209,6 +212,7 @@
         cv["onRuntimeInitialized"] = () => {
           openCvListo = true;
           setEstado("OpenCV.js cargado. Puedes iniciar cámara y cargar modelo.");
+          intentarIniciarPrediccionAutomatica();
           console.log("OpenCV.js listo");
         };
       }
@@ -233,6 +237,7 @@
           salida.dispose();
 
           setEstado("Modelo cargado correctamente.");
+          intentarIniciarPrediccionAutomatica();
           console.log("Modelo cargado:", modelo);
         } catch (error) {
           console.error(error);
@@ -267,6 +272,7 @@
             camaraActiva = true;
             setEstado("Cámara iniciada.");
             procesarCamara();
+            intentarIniciarPrediccionAutomatica();
           })
           .catch(function(err) {
             console.error(err);
@@ -287,7 +293,9 @@
       function procesarCamara() {
         if (!camaraActiva) return;
 
-        ctx.drawImage(video, 0, 0, TAMANO_CAMARA, TAMANO_CAMARA);
+        if (video.readyState >= VIDEO_CON_DATOS) {
+          ctx.drawImage(video, 0, 0, TAMANO_CAMARA, TAMANO_CAMARA);
+        }
 
         requestAnimationFrame(procesarCamara);
       }
@@ -340,14 +348,55 @@
       // Predicción
       // =========================
 
-      async function predecir() {
+      function intentarIniciarPrediccionAutomatica() {
+        if (intervaloPrediccion || !openCvListo || !modelo || !camaraActiva) {
+          return;
+        }
+
+        intervaloPrediccion = setInterval(predecirAutomaticamente, INTERVALO_PREDICCION_MS);
+        setEstado("Predicción automática activa.");
+        predecirAutomaticamente();
+      }
+
+      async function predecirAutomaticamente() {
+        if (prediccionEnCurso) {
+          return;
+        }
+
+        prediccionEnCurso = true;
+
+        try {
+          await predecir({ silenciarAlertas: true });
+        } finally {
+          prediccionEnCurso = false;
+        }
+      }
+
+      async function predecir(opciones = {}) {
+        const silenciarAlertas = opciones.silenciarAlertas === true;
+
         if (!modelo) {
-          alert("Primero debes cargar el modelo.");
+          if (!silenciarAlertas) {
+            alert("Primero debes cargar el modelo.");
+          }
           return null;
         }
 
         if (!camaraActiva) {
-          alert("Primero debes iniciar la cámara.");
+          if (!silenciarAlertas) {
+            alert("Primero debes iniciar la cámara.");
+          }
+          return null;
+        }
+
+        if (!openCvListo) {
+          if (!silenciarAlertas) {
+            alert("OpenCV.js todavía no está listo.");
+          }
+          return null;
+        }
+
+        if (video.readyState < VIDEO_CON_DATOS) {
           return null;
         }
 
@@ -364,11 +413,14 @@
           ultimaPrediccion = resultado;
 
           mostrarResultado(resultado, datos);
+          evaluarPractica(resultado);
 
           return resultado;
         } catch (error) {
           console.error(error);
-          alert("Error al predecir: " + error.message);
+          if (!silenciarAlertas) {
+            alert("Error al predecir: " + error.message);
+          }
           setEstado("Error durante la predicción.");
           return null;
         }
@@ -416,7 +468,7 @@
           `;
         });
 
-        if (resultado.confianza < 0.50) {
+        if (resultado.confianza < CONFIANZA_MINIMA) {
           html += `
             <div class="alert alert-warning mt-3 mb-0">
               Confianza baja. Intenta mejorar la iluminación, centrar la mano y usar un fondo limpio.
@@ -425,8 +477,6 @@
         }
 
         document.getElementById("top3").innerHTML = html;
-
-        setEstado("Predicción realizada.");
       }
 
       // =========================
@@ -438,22 +488,19 @@
 
         document.getElementById("numeroSolicitado").innerText = numeroActual;
         document.getElementById("resultadoPractica").innerText =
-          "Realiza el signo y presiona “Predecir y comprobar”.";
+          "Realiza el signo solicitado. La app comprobará automáticamente.";
       }
 
-      async function predecirYComprobar() {
+      function evaluarPractica(resultado) {
         if (numeroActual === null) {
-          alert("Primero presiona “Nuevo número”.");
           return;
         }
-
-        const resultado = await predecir();
 
         if (!resultado) return;
 
         const textoResultado = document.getElementById("resultadoPractica");
 
-        if (resultado.confianza < 0.50) {
+        if (resultado.confianza < CONFIANZA_MINIMA) {
           textoResultado.innerText =
             "Predicción poco confiable. Intenta nuevamente con mejor iluminación o fondo más limpio.";
           return;
@@ -462,6 +509,7 @@
         if (resultado.clase === numeroActual) {
           textoResultado.innerText =
             "Correcto. Se pidió " + numeroActual + " y el modelo predijo " + resultado.clase + ".";
+          numeroActual = null;
         } else {
           textoResultado.innerText =
             "Incorrecto. Se pidió " + numeroActual + ", pero el modelo predijo " + resultado.clase + ".";
