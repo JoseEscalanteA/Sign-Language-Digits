@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Language Digits - Taller 3 IA</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <p class="eyebrow">Taller 3 IA · Sign Language Digits</p>
+      <h1>Práctica de dígitos en lenguaje de señas</h1>
+      <p>
+        Aplicación simple con cámara, OpenCV.js y TensorFlow.js para reconocer dígitos del 0 al 9.
+      </p>
+    </section>
+
+    <section class="status-card">
+      <div>
+        <strong>Estado:</strong>
+        <span id="status">Inicializando aplicación...</span>
+      </div>
+      <div class="badges">
+        <span id="opencvBadge" class="badge warning">OpenCV pendiente</span>
+        <span id="modelBadge" class="badge warning">Modelo pendiente</span>
+        <span id="cameraBadge" class="badge warning">Cámara pendiente</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="card camera-card">
+        <div class="card-header">
+          <h2>Cámara</h2>
+          <p>Coloca la mano dentro del recuadro central.</p>
+        </div>
+
+        <div class="video-wrap">
+          <video id="video" autoplay playsinline muted></video>
+          <div class="roi-box"></div>
+        </div>
+
+        <div class="controls">
+          <button id="startCameraBtn">Iniciar cámara</button>
+          <button id="loadModelBtn">Cargar modelo</button>
+          <button id="predictBtn" disabled>Predecir</button>
+        </div>
+      </section>
+
+      <section class="card result-card">
+        <div class="card-header">
+          <h2>Predicción</h2>
+          <p>El modelo recibe una imagen de 64x64 en escala de grises.</p>
+        </div>
+
+        <div class="prediction">
+          <span class="label">Dígito detectado</span>
+          <strong id="prediction">—</strong>
+          <span id="confidence">Confianza: —</span>
+        </div>
+
+        <div class="practice">
+          <h3>Modo práctica</h3>
+          <p>Presiona “Nuevo número” y realiza el signo solicitado.</p>
+          <div class="target">
+            Número solicitado: <strong id="targetDigit">—</strong>
+          </div>
+          <div class="controls">
+            <button id="newTargetBtn">Nuevo número</button>
+            <button id="checkBtn" disabled>Predecir y comprobar</button>
+          </div>
+          <p id="practiceResult" class="practice-result">Resultado: —</p>
+        </div>
+
+        <div class="processed">
+          <h3>Imagen procesada</h3>
+          <canvas id="processedCanvas" width="64" height="64"></canvas>
+          <p>Vista 64x64 en gris, igual que la entrada del modelo.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <canvas id="captureCanvas" class="hidden"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
