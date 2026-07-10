@@ -1,0 +1,17 @@
+# Datos y modelos se guardan en Google Drive, no en GitHub
+data/*.npy
+models/*.keras
+models/*.h5
+
+# Resultados generados
+logs/
+**/logs/
+results/figures/*.png
+results/metrics/*.csv
+
+# Entornos y archivos temporales
+venv/
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
