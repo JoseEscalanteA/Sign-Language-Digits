@@ -3,978 +3,175 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102a43">
 
-    <title>Sign Language Digits</title>
+    <title>Sign Language Digits | Taller 3 IA</title>
 
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-
-    <style>
-      body {
-        background: #f5f7fb;
-      }
-
-      #resultado {
-        font-weight: bold;
-        font-size: 5rem;
-        text-align: center;
-        line-height: 1;
-      }
-
-      #confianza {
-        font-size: 1.2rem;
-        text-align: center;
-        color: #0d6efd;
-      }
-
-      .camera-wrapper {
-        position: relative;
-        display: inline-block;
-        width: 100%;
-        max-width: 400px;
-      }
-
-      #canvas {
-        display: block;
-        width: 100%;
-        max-width: 400px;
-        border: 3px solid #0d6efd;
-        border-radius: 12px;
-        background: #000;
-      }
-
-      .roi-guide {
-        position: absolute;
-        width: 75%;
-        height: 75%;
-        left: 12.5%;
-        top: 12.5%;
-        border: 3px dashed rgba(255, 255, 255, 0.95);
-        border-radius: 16px;
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.12);
-        pointer-events: none;
-      }
-
-      #canvasProcesado {
-        width: 128px;
-        height: 128px;
-        image-rendering: pixelated;
-        border: 2px solid #6c757d;
-        border-radius: 8px;
-        background: #000;
-      }
-
-      .pred-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-      }
-
-      .small-note {
-        font-size: 0.9rem;
-        color: #6c757d;
-      }
-
-      .estado-listo {
-        color: #198754;
-      }
-
-      .estado-error {
-        color: #dc3545;
-      }
-
-      video {
-        display: none;
-      }
-    </style>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://docs.opencv.org">
+    <link rel="stylesheet" href="./style.css">
   </head>
 
   <body>
-    <main>
-      <header class="px-4 py-4 my-2 text-center border-bottom bg-white">
-        <h1 class="display-5 fw-bold">Sign Language Digits</h1>
+    <header class="site-header">
+      <div class="header-mark" aria-hidden="true">IA</div>
+      <div>
+        <p class="eyebrow">Universidad de Tarapacá · Taller 3</p>
+        <h1>Sign Language Digits</h1>
+        <p class="subtitle">
+          Practica los dígitos del 0 al 9 con reconocimiento en tiempo real.
+        </p>
+      </div>
+    </header>
 
-        <div class="col-lg-8 mx-auto">
-          <p class="lead mb-1">
-            Aplicación para practicar dígitos en lenguaje de señas usando
-            cámara, OpenCV.js y TensorFlow.js.
-          </p>
+    <main class="app-shell">
+      <section id="protocolWarning" class="protocol-warning" hidden>
+        <strong>La aplicación necesita un servidor local.</strong>
+        No abras <code>index.html</code> con doble clic. Ejecuta
+        <code>python -m http.server 5500</code> en esta carpeta y visita
+        <a href="http://localhost:5500">http://localhost:5500</a>.
+      </section>
 
-          <p class="small-note mb-0">
-            El modelo recibe imágenes de 64 × 64 píxeles en escala de grises.
+      <section class="status-panel" aria-labelledby="statusTitle">
+        <div>
+          <p class="section-label" id="statusTitle">Estado del sistema</p>
+          <p id="statusText" class="status-message" aria-live="polite">
+            Inicializando recursos…
           </p>
         </div>
-      </header>
 
-      <div class="container mt-4 mb-5">
-        <div class="row g-4">
-          <!-- Cámara -->
-          <section class="col-12 col-lg-7">
-            <div class="pred-card">
-              <h2 class="h3">Cámara</h2>
+        <div class="resource-list" aria-label="Estado de recursos">
+          <span id="tfStatus" class="resource-badge" data-state="pending">
+            <span class="status-dot"></span>TensorFlow.js
+          </span>
+          <span id="cvStatus" class="resource-badge" data-state="pending">
+            <span class="status-dot"></span>OpenCV.js
+          </span>
+          <span id="modelStatus" class="resource-badge" data-state="pending">
+            <span class="status-dot"></span>Modelo
+          </span>
+          <span id="cameraStatus" class="resource-badge" data-state="pending">
+            <span class="status-dot"></span>Cámara
+          </span>
+        </div>
+      </section>
 
-              <p class="small-note">
-                Coloca la mano dentro del cuadro punteado. Usa buena iluminación
-                y un fondo lo más limpio posible.
-              </p>
-
-              <video id="video" playsinline autoplay muted></video>
-
-              <div class="camera-wrapper">
-                <canvas
-                  id="canvas"
-                  width="400"
-                  height="400"
-                  aria-label="Vista de la cámara"
-                ></canvas>
-
-                <div class="roi-guide" aria-hidden="true"></div>
-              </div>
-
-              <div class="mt-3 d-flex flex-wrap gap-2">
-                <button class="btn btn-primary" id="btnIniciar" type="button">
-                  Iniciar cámara
-                </button>
-
-                <button class="btn btn-secondary" id="btnCambiar" type="button">
-                  Cambiar cámara
-                </button>
-
-                <button class="btn btn-success" id="btnModelo" type="button">
-                  Recargar modelo
-                </button>
-              </div>
-
-              <div class="mt-3">
-                <strong>Estado:</strong>
-                <span id="estado">Cargando recursos...</span>
-              </div>
+      <div class="workspace-grid">
+        <section class="panel camera-panel" aria-labelledby="cameraTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Captura</p>
+              <h2 id="cameraTitle">Cámara</h2>
             </div>
-          </section>
+            <span class="live-indicator"><span></span>En vivo</span>
+          </div>
 
-          <!-- Resultado -->
-          <section class="col-12 col-lg-5">
-            <div class="pred-card mb-4">
-              <h2 class="h3 text-center">Dígito detectado</h2>
+          <p class="instruction">
+            Coloca la mano completa dentro del recuadro. Evita luces detrás de
+            la mano y utiliza un fondo uniforme cuando sea posible.
+          </p>
 
-              <div id="resultado">-</div>
-              <div id="confianza">Confianza: -</div>
-
-              <hr>
-
-              <h3 class="h5">Top 3 predicciones</h3>
-
-              <div id="top3" class="small-note">
-                Aún no hay predicción.
-              </div>
+          <div class="camera-stage">
+            <video id="video" playsinline autoplay muted></video>
+            <div id="cameraPlaceholder" class="camera-placeholder">
+              <span class="hand-symbol" aria-hidden="true">5</span>
+              <p>La vista de cámara aparecerá aquí</p>
             </div>
+            <div class="roi-guide" aria-hidden="true">
+              <span class="corner corner-tl"></span>
+              <span class="corner corner-tr"></span>
+              <span class="corner corner-bl"></span>
+              <span class="corner corner-br"></span>
+            </div>
+          </div>
 
-            <div class="pred-card mb-4">
-              <h2 class="h3">Modo práctica</h2>
+          <div class="controls">
+            <button id="startCameraBtn" class="button button-primary" type="button">
+              Iniciar cámara
+            </button>
+            <button id="switchCameraBtn" class="button button-secondary" type="button" disabled>
+              Cambiar cámara
+            </button>
+            <button id="stopCameraBtn" class="button button-ghost" type="button" disabled>
+              Detener
+            </button>
+          </div>
+        </section>
 
-              <p class="small-note">
-                Presiona “Nuevo número” y realiza el signo solicitado. La
-                aplicación comprobará automáticamente la predicción.
-              </p>
-
-              <div class="alert alert-primary">
-                Número solicitado:
-                <strong id="numeroSolicitado">-</strong>
+        <aside class="result-column">
+          <section class="panel prediction-panel" aria-labelledby="predictionTitle">
+            <div class="panel-heading compact">
+              <div>
+                <p class="section-label">Clasificación</p>
+                <h2 id="predictionTitle">Dígito detectado</h2>
               </div>
-
-              <button
-                class="btn btn-outline-primary"
-                id="btnNuevoNumero"
-                type="button"
-              >
-                Nuevo número
+              <button id="reloadModelBtn" class="icon-button" type="button" title="Recargar modelo">
+                ↻<span class="sr-only">Recargar modelo</span>
               </button>
+            </div>
 
-              <div class="mt-3">
-                <strong>Resultado:</strong>
-                <span id="resultadoPractica">-</span>
+            <div class="prediction-display">
+              <strong id="prediction" aria-live="polite">—</strong>
+              <div>
+                <p id="confidence">Confianza: —</p>
+                <p id="stability" class="muted">Esperando cámara</p>
               </div>
             </div>
 
-            <div class="pred-card">
-              <h2 class="h3">Imagen procesada</h2>
-
-              <p class="small-note">
-                Esta es la región central convertida a gris y redimensionada a
-                64 × 64 antes de enviarla al modelo.
-              </p>
-
-              <canvas
-                id="canvasProcesado"
-                width="64"
-                height="64"
-                aria-label="Imagen procesada para el modelo"
-              ></canvas>
+            <div id="topPredictions" class="score-list">
+              <p class="empty-state">Aún no hay predicciones.</p>
             </div>
           </section>
-        </div>
+
+          <section class="panel practice-panel" aria-labelledby="practiceTitle">
+            <div class="panel-heading compact">
+              <div>
+                <p class="section-label">Entrenamiento</p>
+                <h2 id="practiceTitle">Modo práctica</h2>
+              </div>
+              <div class="target-digit" id="targetDigit">—</div>
+            </div>
+
+            <p id="practiceFeedback" class="practice-feedback" aria-live="polite">
+              Genera un desafío y realiza el signo solicitado.
+            </p>
+
+            <button id="newTargetBtn" class="button button-accent" type="button">
+              Nuevo desafío
+            </button>
+
+            <dl class="practice-stats">
+              <div><dt>Desafíos</dt><dd id="challengeCount">0</dd></div>
+              <div><dt>Aciertos</dt><dd id="successCount">0</dd></div>
+              <div><dt>Racha</dt><dd id="streakCount">0</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel processed-panel" aria-labelledby="processedTitle">
+            <div>
+              <p class="section-label">Entrada del modelo</p>
+              <h2 id="processedTitle">Imagen procesada</h2>
+              <p class="muted">
+                ROI en gris, redimensionada a 64 × 64 y normalizada a [0, 1].
+              </p>
+            </div>
+            <canvas id="processedCanvas" width="64" height="64" aria-label="Imagen enviada al modelo"></canvas>
+          </section>
+        </aside>
       </div>
     </main>
 
-    <!-- TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <canvas id="captureCanvas" width="300" height="300" hidden></canvas>
 
-    <!-- OpenCV.js -->
+    <footer>
+      CNN entrenada con Sign Language Digits · TensorFlow.js + OpenCV.js
+    </footer>
+
     <script
-      async
-      src="https://docs.opencv.org/4.x/opencv.js"
-      onload="onOpenCvLoaded()"
+      defer
+      id="tfjsScript"
+      src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
     ></script>
-
-    <script>
-      "use strict";
-
-      // =========================================================
-      // Configuración
-      // =========================================================
-
-      const TAMANO_CAMARA = 400;
-      const INPUT_SIZE = 64;
-      const VIDEO_CON_DATOS = 2;
-      const INTERVALO_PREDICCION_MS = 500;
-      const CONFIANZA_MINIMA = 0.50;
-      const PROPORCION_ROI = 0.75;
-
-      const MODEL_PATH = "./model/model.json";
-      const LABELS_PATH = "./model/labels.json";
-
-      // =========================================================
-      // Elementos del DOM
-      // =========================================================
-
-      const video = document.getElementById("video");
-      const canvas = document.getElementById("canvas");
-      const canvasProcesado = document.getElementById("canvasProcesado");
-
-      const ctx = canvas.getContext("2d");
-
-      const btnIniciar = document.getElementById("btnIniciar");
-      const btnCambiar = document.getElementById("btnCambiar");
-      const btnModelo = document.getElementById("btnModelo");
-      const btnNuevoNumero = document.getElementById("btnNuevoNumero");
-
-      // =========================================================
-      // Estado de la aplicación
-      // =========================================================
-
-      let CLASES = [];
-
-      let currentStream = null;
-      let facingMode = "user";
-      let frameRequestId = null;
-
-      let modelo = null;
-      let cargandoModelo = false;
-
-      let camaraActiva = false;
-      let openCvListo = false;
-
-      let numeroActual = null;
-      let ultimaPrediccion = null;
-
-      let intervaloPrediccion = null;
-      let prediccionEnCurso = false;
-
-      // =========================================================
-      // Estado visual
-      // =========================================================
-
-      function setEstado(mensaje, tipo = "normal") {
-        const estado = document.getElementById("estado");
-
-        estado.innerText = mensaje;
-        estado.classList.remove("estado-listo", "estado-error");
-
-        if (tipo === "listo") {
-          estado.classList.add("estado-listo");
-        } else if (tipo === "error") {
-          estado.classList.add("estado-error");
-        }
-      }
-
-      function actualizarEstadoPreparacion() {
-        if (modelo && openCvListo && camaraActiva) {
-          setEstado("Predicción automática activa.", "listo");
-          return;
-        }
-
-        const pendientes = [];
-
-        if (!modelo) pendientes.push("modelo");
-        if (!openCvListo) pendientes.push("OpenCV.js");
-        if (!camaraActiva) pendientes.push("cámara");
-
-        setEstado(
-          "Pendiente: " + pendientes.join(", ") + "."
-        );
-      }
-
-      // =========================================================
-      // OpenCV.js
-      // =========================================================
-
-      function marcarOpenCvComoListo() {
-        if (openCvListo) {
-          return;
-        }
-
-        openCvListo = true;
-
-        console.log("OpenCV.js listo.");
-        actualizarEstadoPreparacion();
-        intentarIniciarPrediccionAutomatica();
-      }
-
-      async function onOpenCvLoaded() {
-        try {
-          if (!window.cv) {
-            throw new Error("No se encontró el objeto global cv.");
-          }
-
-          // Algunas versiones entregan cv como una promesa.
-          if (typeof window.cv.then === "function") {
-            window.cv = await window.cv;
-          }
-
-          if (window.cv.Mat) {
-            marcarOpenCvComoListo();
-          } else {
-            window.cv.onRuntimeInitialized = marcarOpenCvComoListo;
-          }
-        } catch (error) {
-          console.error("Error al cargar OpenCV.js:", error);
-          setEstado("OpenCV.js no se pudo cargar.", "error");
-        }
-      }
-
-      // =========================================================
-      // Modelo TensorFlow.js
-      // =========================================================
-
-      async function cargarModelo() {
-        if (cargandoModelo) {
-          return;
-        }
-
-        cargandoModelo = true;
-        btnModelo.disabled = true;
-
-        try {
-          setEstado("Cargando modelo y etiquetas...");
-
-          if (modelo) {
-            modelo.dispose();
-            modelo = null;
-          }
-
-          const [modeloCargado, respuestaEtiquetas] = await Promise.all([
-            tf.loadLayersModel(MODEL_PATH),
-            fetch(LABELS_PATH)
-          ]);
-
-          if (!respuestaEtiquetas.ok) {
-            throw new Error(
-              `No se pudo cargar labels.json. Estado HTTP: ${respuestaEtiquetas.status}`
-            );
-          }
-
-          const etiquetasCargadas = await respuestaEtiquetas.json();
-
-          if (
-            !Array.isArray(etiquetasCargadas) ||
-            etiquetasCargadas.length !== 10
-          ) {
-            throw new Error(
-              "labels.json debe contener exactamente 10 etiquetas."
-            );
-          }
-
-          const formaEntrada = modeloCargado.inputs[0].shape;
-          const formaSalida = modeloCargado.outputs[0].shape;
-
-          if (
-            formaEntrada.length !== 4 ||
-            formaEntrada[1] !== INPUT_SIZE ||
-            formaEntrada[2] !== INPUT_SIZE ||
-            formaEntrada[3] !== 1
-          ) {
-            modeloCargado.dispose();
-
-            throw new Error(
-              `El modelo no espera imágenes [64, 64, 1]. Forma encontrada: ${formaEntrada}`
-            );
-          }
-
-          if (formaSalida[1] !== etiquetasCargadas.length) {
-            modeloCargado.dispose();
-
-            throw new Error(
-              "La cantidad de salidas del modelo no coincide con labels.json."
-            );
-          }
-
-          modelo = modeloCargado;
-          CLASES = etiquetasCargadas.map(String);
-
-          // Primera predicción para preparar internamente el modelo.
-          const prueba = tf.zeros([1, INPUT_SIZE, INPUT_SIZE, 1]);
-          const salidaPrueba = modelo.predict(prueba);
-
-          await salidaPrueba.data();
-
-          prueba.dispose();
-          salidaPrueba.dispose();
-
-          console.log("Modelo cargado correctamente.");
-          console.log("Entrada esperada:", formaEntrada);
-          console.log("Salida esperada:", formaSalida);
-          console.log("Etiquetas:", CLASES);
-
-          setEstado("Modelo y etiquetas cargados correctamente.", "listo");
-
-          intentarIniciarPrediccionAutomatica();
-        } catch (error) {
-          console.error("Error al cargar el modelo:", error);
-
-          modelo = null;
-          CLASES = [];
-
-          setEstado("Error al cargar el modelo.", "error");
-
-          alert(
-            "Error al cargar el modelo: " +
-            error.message
-          );
-        } finally {
-          cargandoModelo = false;
-          btnModelo.disabled = false;
-          actualizarEstadoPreparacion();
-        }
-      }
-
-      // =========================================================
-      // Cámara
-      // =========================================================
-
-      function detenerCamara() {
-        camaraActiva = false;
-
-        if (frameRequestId !== null) {
-          cancelAnimationFrame(frameRequestId);
-          frameRequestId = null;
-        }
-
-        if (intervaloPrediccion !== null) {
-          clearInterval(intervaloPrediccion);
-          intervaloPrediccion = null;
-        }
-
-        if (currentStream) {
-          currentStream
-            .getTracks()
-            .forEach((track) => track.stop());
-
-          currentStream = null;
-        }
-
-        video.srcObject = null;
-      }
-
-      async function mostrarCamara() {
-        try {
-          detenerCamara();
-
-          setEstado("Solicitando acceso a la cámara...");
-
-          if (
-            !navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia
-          ) {
-            throw new Error(
-              "El navegador no soporta acceso a la cámara."
-            );
-          }
-
-          const opciones = {
-            audio: false,
-            video: {
-              facingMode: {
-                ideal: facingMode
-              },
-              width: {
-                ideal: 640
-              },
-              height: {
-                ideal: 480
-              }
-            }
-          };
-
-          currentStream =
-            await navigator.mediaDevices.getUserMedia(opciones);
-
-          video.srcObject = currentStream;
-
-          await new Promise((resolve) => {
-            if (video.readyState >= 1) {
-              resolve();
-            } else {
-              video.onloadedmetadata = () => resolve();
-            }
-          });
-
-          await video.play();
-
-          camaraActiva = true;
-
-          procesarCamara();
-          actualizarEstadoPreparacion();
-          intentarIniciarPrediccionAutomatica();
-        } catch (error) {
-          console.error("Error al iniciar cámara:", error);
-
-          detenerCamara();
-          setEstado("Error al iniciar cámara.", "error");
-
-          alert(
-            "No se pudo utilizar la cámara: " +
-            error.message
-          );
-        }
-      }
-
-      async function cambiarCamara() {
-        facingMode =
-          facingMode === "user"
-            ? "environment"
-            : "user";
-
-        await mostrarCamara();
-      }
-
-      function procesarCamara() {
-        if (!camaraActiva) {
-          return;
-        }
-
-        if (
-          video.readyState >= VIDEO_CON_DATOS &&
-          video.videoWidth > 0 &&
-          video.videoHeight > 0
-        ) {
-          const anchoVideo = video.videoWidth;
-          const altoVideo = video.videoHeight;
-
-          // Obtiene un recorte cuadrado desde el centro sin deformar.
-          const lado = Math.min(anchoVideo, altoVideo);
-          const origenX = (anchoVideo - lado) / 2;
-          const origenY = (altoVideo - lado) / 2;
-
-          ctx.drawImage(
-            video,
-            origenX,
-            origenY,
-            lado,
-            lado,
-            0,
-            0,
-            TAMANO_CAMARA,
-            TAMANO_CAMARA
-          );
-        }
-
-        frameRequestId =
-          requestAnimationFrame(procesarCamara);
-      }
-
-      // =========================================================
-      // Preprocesamiento con OpenCV.js
-      // =========================================================
-
-      function preprocesarImagen() {
-        if (!openCvListo) {
-          throw new Error(
-            "OpenCV.js todavía no está listo."
-          );
-        }
-
-        let src = null;
-        let roi = null;
-        let gray = null;
-        let resized = null;
-
-        try {
-          src = cv.imread(canvas);
-
-          const tamanoRoi = Math.round(
-            TAMANO_CAMARA * PROPORCION_ROI
-          );
-
-          const inicioX = Math.floor(
-            (TAMANO_CAMARA - tamanoRoi) / 2
-          );
-
-          const inicioY = Math.floor(
-            (TAMANO_CAMARA - tamanoRoi) / 2
-          );
-
-          const rectangulo = new cv.Rect(
-            inicioX,
-            inicioY,
-            tamanoRoi,
-            tamanoRoi
-          );
-
-          roi = src.roi(rectangulo);
-
-          gray = new cv.Mat();
-
-          cv.cvtColor(
-            roi,
-            gray,
-            cv.COLOR_RGBA2GRAY
-          );
-
-          resized = new cv.Mat();
-
-          cv.resize(
-            gray,
-            resized,
-            new cv.Size(INPUT_SIZE, INPUT_SIZE),
-            0,
-            0,
-            cv.INTER_AREA
-          );
-
-          // Muestra exactamente la imagen enviada al modelo.
-          cv.imshow(canvasProcesado, resized);
-
-          const valores = new Float32Array(
-            INPUT_SIZE * INPUT_SIZE
-          );
-
-          for (
-            let indice = 0;
-            indice < resized.data.length;
-            indice += 1
-          ) {
-            valores[indice] =
-              resized.data[indice] / 255.0;
-          }
-
-          return tf.tensor4d(
-            valores,
-            [1, INPUT_SIZE, INPUT_SIZE, 1]
-          );
-        } finally {
-          if (resized) resized.delete();
-          if (gray) gray.delete();
-          if (roi) roi.delete();
-          if (src) src.delete();
-        }
-      }
-
-      // =========================================================
-      // Predicción
-      // =========================================================
-
-      function intentarIniciarPrediccionAutomatica() {
-        if (
-          intervaloPrediccion !== null ||
-          !openCvListo ||
-          !modelo ||
-          !camaraActiva
-        ) {
-          return;
-        }
-
-        intervaloPrediccion = setInterval(
-          predecirAutomaticamente,
-          INTERVALO_PREDICCION_MS
-        );
-
-        setEstado("Predicción automática activa.", "listo");
-        predecirAutomaticamente();
-      }
-
-      async function predecirAutomaticamente() {
-        if (prediccionEnCurso) {
-          return;
-        }
-
-        prediccionEnCurso = true;
-
-        try {
-          await predecir({
-            silenciarAlertas: true
-          });
-        } finally {
-          prediccionEnCurso = false;
-        }
-      }
-
-      async function predecir(opciones = {}) {
-        const silenciarAlertas =
-          opciones.silenciarAlertas === true;
-
-        if (!modelo) {
-          if (!silenciarAlertas) {
-            alert("Primero debes cargar el modelo.");
-          }
-
-          return null;
-        }
-
-        if (!camaraActiva) {
-          if (!silenciarAlertas) {
-            alert("Primero debes iniciar la cámara.");
-          }
-
-          return null;
-        }
-
-        if (!openCvListo) {
-          if (!silenciarAlertas) {
-            alert("OpenCV.js todavía no está listo.");
-          }
-
-          return null;
-        }
-
-        if (video.readyState < VIDEO_CON_DATOS) {
-          return null;
-        }
-
-        let tensor = null;
-        let salida = null;
-
-        try {
-          tensor = preprocesarImagen();
-          salida = modelo.predict(tensor);
-
-          const datos = Array.from(
-            await salida.data()
-          );
-
-          const resultado = obtenerResultado(datos);
-
-          ultimaPrediccion = resultado;
-
-          mostrarResultado(resultado, datos);
-          evaluarPractica(resultado);
-
-          return resultado;
-        } catch (error) {
-          console.error("Error durante la predicción:", error);
-
-          if (!silenciarAlertas) {
-            alert(
-              "Error al predecir: " +
-              error.message
-            );
-          }
-
-          setEstado("Error durante la predicción.", "error");
-
-          return null;
-        } finally {
-          if (tensor) tensor.dispose();
-          if (salida) salida.dispose();
-        }
-      }
-
-      function obtenerResultado(probabilidades) {
-        if (
-          !Array.isArray(probabilidades) ||
-          probabilidades.length !== CLASES.length
-        ) {
-          throw new Error(
-            "La salida del modelo no coincide con las etiquetas."
-          );
-        }
-
-        let indiceMayor = 0;
-        let confianzaMayor = probabilidades[0];
-
-        for (
-          let indice = 1;
-          indice < probabilidades.length;
-          indice += 1
-        ) {
-          if (
-            probabilidades[indice] >
-            confianzaMayor
-          ) {
-            confianzaMayor =
-              probabilidades[indice];
-
-            indiceMayor = indice;
-          }
-        }
-
-        return {
-          indice: indiceMayor,
-          clase: CLASES[indiceMayor],
-          confianza: confianzaMayor
-        };
-      }
-
-      function mostrarResultado(resultado, probabilidades) {
-        document.getElementById("resultado").innerText =
-          resultado.clase;
-
-        document.getElementById("confianza").innerText =
-          "Confianza: " +
-          (resultado.confianza * 100).toFixed(2) +
-          "%";
-
-        const top3 = probabilidades
-          .map((probabilidad, indice) => ({
-            clase: CLASES[indice],
-            probabilidad
-          }))
-          .sort(
-            (a, b) =>
-              b.probabilidad - a.probabilidad
-          )
-          .slice(0, 3);
-
-        let html = "";
-
-        top3.forEach((item) => {
-          html += `
-            <div class="mb-2">
-              <strong>Dígito ${item.clase}</strong>:
-              ${(item.probabilidad * 100).toFixed(2)}%
-            </div>
-          `;
-        });
-
-        if (
-          resultado.confianza <
-          CONFIANZA_MINIMA
-        ) {
-          html += `
-            <div class="alert alert-warning mt-3 mb-0">
-              Confianza baja. Mejora la iluminación, centra la mano y
-              utiliza un fondo limpio.
-            </div>
-          `;
-        }
-
-        document.getElementById("top3").innerHTML =
-          html;
-      }
-
-      // =========================================================
-      // Modo práctica
-      // =========================================================
-
-      function nuevoNumero() {
-        numeroActual =
-          Math.floor(Math.random() * 10).toString();
-
-        document.getElementById(
-          "numeroSolicitado"
-        ).innerText = numeroActual;
-
-        document.getElementById(
-          "resultadoPractica"
-        ).innerText =
-          "Realiza el signo solicitado. La aplicación lo comprobará automáticamente.";
-      }
-
-      function evaluarPractica(resultado) {
-        if (
-          numeroActual === null ||
-          !resultado
-        ) {
-          return;
-        }
-
-        const textoResultado =
-          document.getElementById(
-            "resultadoPractica"
-          );
-
-        if (
-          resultado.confianza <
-          CONFIANZA_MINIMA
-        ) {
-          textoResultado.innerText =
-            "Predicción poco confiable. Intenta nuevamente con mejor iluminación o un fondo más limpio.";
-
-          return;
-        }
-
-        if (
-          resultado.clase ===
-          numeroActual
-        ) {
-          textoResultado.innerText =
-            `Correcto. Se pidió ${numeroActual} y el modelo predijo ${resultado.clase}.`;
-
-          numeroActual = null;
-        } else {
-          textoResultado.innerText =
-            `Incorrecto. Se pidió ${numeroActual}, pero el modelo predijo ${resultado.clase}.`;
-        }
-      }
-
-      // =========================================================
-      // Inicio y limpieza
-      // =========================================================
-
-      btnIniciar.addEventListener(
-        "click",
-        mostrarCamara
-      );
-
-      btnCambiar.addEventListener(
-        "click",
-        cambiarCamara
-      );
-
-      btnModelo.addEventListener(
-        "click",
-        cargarModelo
-      );
-
-      btnNuevoNumero.addEventListener(
-        "click",
-        nuevoNumero
-      );
-
-      window.addEventListener(
-        "DOMContentLoaded",
-        () => {
-          setEstado(
-            "Página cargada. Cargando modelo y OpenCV.js..."
-          );
-
-          cargarModelo();
-        }
-      );
-
-      window.addEventListener(
-        "beforeunload",
-        () => {
-          detenerCamara();
-
-          if (modelo) {
-            modelo.dispose();
-            modelo = null;
-          }
-        }
-      );
-    </script>
+    <script defer src="./app.js"></script>
   </body>
 </html>
