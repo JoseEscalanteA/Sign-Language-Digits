@@ -3,9 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Sign Language Digits</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
 
     <style>
       body {
@@ -25,11 +29,32 @@
         color: #0d6efd;
       }
 
+      .camera-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        max-width: 400px;
+      }
+
       #canvas {
-        max-width: 100%;
+        display: block;
+        width: 100%;
+        max-width: 400px;
         border: 3px solid #0d6efd;
         border-radius: 12px;
         background: #000;
+      }
+
+      .roi-guide {
+        position: absolute;
+        width: 75%;
+        height: 75%;
+        left: 12.5%;
+        top: 12.5%;
+        border: 3px dashed rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.12);
+        pointer-events: none;
       }
 
       #canvasProcesado {
@@ -42,15 +67,23 @@
       }
 
       .pred-card {
-        background: white;
+        background: #fff;
         border-radius: 12px;
         padding: 1rem;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
       }
 
       .small-note {
         font-size: 0.9rem;
         color: #6c757d;
+      }
+
+      .estado-listo {
+        color: #198754;
+      }
+
+      .estado-error {
+        color: #dc3545;
       }
 
       video {
@@ -61,65 +94,90 @@
 
   <body>
     <main>
-      <div class="px-4 py-4 my-2 text-center border-bottom bg-white">
+      <header class="px-4 py-4 my-2 text-center border-bottom bg-white">
         <h1 class="display-5 fw-bold">Sign Language Digits</h1>
+
         <div class="col-lg-8 mx-auto">
           <p class="lead mb-1">
-            Aplicación para practicar dígitos en lenguaje de señas usando cámara, OpenCV.js y TensorFlow.js.
+            Aplicación para practicar dígitos en lenguaje de señas usando
+            cámara, OpenCV.js y TensorFlow.js.
           </p>
+
           <p class="small-note mb-0">
-            El modelo recibe imágenes de 64x64 en escala de grises.
+            El modelo recibe imágenes de 64 × 64 píxeles en escala de grises.
           </p>
         </div>
-      </div>
+      </header>
 
-      <div class="container mt-4">
+      <div class="container mt-4 mb-5">
         <div class="row g-4">
           <!-- Cámara -->
-          <div class="col-12 col-lg-7">
+          <section class="col-12 col-lg-7">
             <div class="pred-card">
-              <h3>Cámara</h3>
+              <h2 class="h3">Cámara</h2>
+
               <p class="small-note">
-                Coloca la mano centrada en el cuadro. Usa buena iluminación y un fondo lo más limpio posible.
+                Coloca la mano dentro del cuadro punteado. Usa buena iluminación
+                y un fondo lo más limpio posible.
               </p>
 
               <video id="video" playsinline autoplay muted></video>
 
-              <canvas id="canvas" width="400" height="400"></canvas>
+              <div class="camera-wrapper">
+                <canvas
+                  id="canvas"
+                  width="400"
+                  height="400"
+                  aria-label="Vista de la cámara"
+                ></canvas>
+
+                <div class="roi-guide" aria-hidden="true"></div>
+              </div>
 
               <div class="mt-3 d-flex flex-wrap gap-2">
-                <button class="btn btn-primary" id="btnIniciar" onclick="mostrarCamara()">Iniciar cámara</button>
-                <button class="btn btn-secondary" id="btnCambiar" onclick="cambiarCamara()">Cambiar cámara</button>
-                <button class="btn btn-success" id="btnModelo" onclick="cargarModelo()">Cargar modelo</button>
+                <button class="btn btn-primary" id="btnIniciar" type="button">
+                  Iniciar cámara
+                </button>
+
+                <button class="btn btn-secondary" id="btnCambiar" type="button">
+                  Cambiar cámara
+                </button>
+
+                <button class="btn btn-success" id="btnModelo" type="button">
+                  Recargar modelo
+                </button>
               </div>
 
               <div class="mt-3">
                 <strong>Estado:</strong>
-                <span id="estado">Esperando acciones...</span>
+                <span id="estado">Cargando recursos...</span>
               </div>
             </div>
-          </div>
+          </section>
 
           <!-- Resultado -->
-          <div class="col-12 col-lg-5">
+          <section class="col-12 col-lg-5">
             <div class="pred-card mb-4">
-              <h3 class="text-center">Dígito detectado</h3>
+              <h2 class="h3 text-center">Dígito detectado</h2>
 
               <div id="resultado">-</div>
               <div id="confianza">Confianza: -</div>
 
               <hr>
 
-              <h5>Top 3 predicciones</h5>
+              <h3 class="h5">Top 3 predicciones</h3>
+
               <div id="top3" class="small-note">
                 Aún no hay predicción.
               </div>
             </div>
 
             <div class="pred-card mb-4">
-              <h3>Modo práctica</h3>
+              <h2 class="h3">Modo práctica</h2>
+
               <p class="small-note">
-                Presiona “Nuevo número” y realiza el signo solicitado. La app comprobará automáticamente la predicción.
+                Presiona “Nuevo número” y realiza el signo solicitado. La
+                aplicación comprobará automáticamente la predicción.
               </p>
 
               <div class="alert alert-primary">
@@ -127,9 +185,13 @@
                 <strong id="numeroSolicitado">-</strong>
               </div>
 
-              <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-outline-primary" onclick="nuevoNumero()">Nuevo número</button>
-              </div>
+              <button
+                class="btn btn-outline-primary"
+                id="btnNuevoNumero"
+                type="button"
+              >
+                Nuevo número
+              </button>
 
               <div class="mt-3">
                 <strong>Resultado:</strong>
@@ -138,223 +200,508 @@
             </div>
 
             <div class="pred-card">
-              <h3>Imagen procesada</h3>
+              <h2 class="h3">Imagen procesada</h2>
+
               <p class="small-note">
-                Esta es la imagen 64x64 en gris que se envía al modelo.
+                Esta es la región central convertida a gris y redimensionada a
+                64 × 64 antes de enviarla al modelo.
               </p>
 
-              <canvas id="canvasProcesado" width="64" height="64"></canvas>
+              <canvas
+                id="canvasProcesado"
+                width="64"
+                height="64"
+                aria-label="Imagen procesada para el modelo"
+              ></canvas>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </main>
 
-    <!-- TensorFlow.js: se usa una versión actual compatible con el modelo convertido -->
+    <!-- TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 
     <!-- OpenCV.js -->
-    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvLoaded();"></script>
+    <script
+      async
+      src="https://docs.opencv.org/4.x/opencv.js"
+      onload="onOpenCvLoaded()"
+    ></script>
 
     <script>
-      // =========================
-      // Configuración del proyecto
-      // =========================
+      "use strict";
+
+      // =========================================================
+      // Configuración
+      // =========================================================
 
       const TAMANO_CAMARA = 400;
       const INPUT_SIZE = 64;
       const VIDEO_CON_DATOS = 2;
       const INTERVALO_PREDICCION_MS = 500;
       const CONFIANZA_MINIMA = 0.50;
+      const PROPORCION_ROI = 0.75;
 
-      // Si tienes el modelo dentro de una carpeta model/, cambia esto a:
-      // const MODEL_PATH = "./model/model.json";
-      const MODEL_PATH = "./model.json";
+      const MODEL_PATH = "./model/model.json";
+      const LABELS_PATH = "./model/labels.json";
 
-      const CLASES = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+      // =========================================================
+      // Elementos del DOM
+      // =========================================================
 
-      let video = document.getElementById("video");
-      let canvas = document.getElementById("canvas");
-      let canvasProcesado = document.getElementById("canvasProcesado");
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const canvasProcesado = document.getElementById("canvasProcesado");
 
-      let ctx = canvas.getContext("2d");
-      let ctxProcesado = canvasProcesado.getContext("2d");
+      const ctx = canvas.getContext("2d");
+
+      const btnIniciar = document.getElementById("btnIniciar");
+      const btnCambiar = document.getElementById("btnCambiar");
+      const btnModelo = document.getElementById("btnModelo");
+      const btnNuevoNumero = document.getElementById("btnNuevoNumero");
+
+      // =========================================================
+      // Estado de la aplicación
+      // =========================================================
+
+      let CLASES = [];
 
       let currentStream = null;
       let facingMode = "user";
+      let frameRequestId = null;
 
       let modelo = null;
+      let cargandoModelo = false;
+
       let camaraActiva = false;
       let openCvListo = false;
+
       let numeroActual = null;
       let ultimaPrediccion = null;
+
       let intervaloPrediccion = null;
       let prediccionEnCurso = false;
 
-      // =========================
+      // =========================================================
       // Estado visual
-      // =========================
+      // =========================================================
 
-      function setEstado(mensaje) {
-        document.getElementById("estado").innerText = mensaje;
+      function setEstado(mensaje, tipo = "normal") {
+        const estado = document.getElementById("estado");
+
+        estado.innerText = mensaje;
+        estado.classList.remove("estado-listo", "estado-error");
+
+        if (tipo === "listo") {
+          estado.classList.add("estado-listo");
+        } else if (tipo === "error") {
+          estado.classList.add("estado-error");
+        }
       }
 
-      // =========================
-      // Cargar OpenCV
-      // =========================
-
-      function onOpenCvLoaded() {
-        if (typeof cv === "undefined") {
-          setEstado("OpenCV.js no se pudo cargar.");
+      function actualizarEstadoPreparacion() {
+        if (modelo && openCvListo && camaraActiva) {
+          setEstado("Predicción automática activa.", "listo");
           return;
         }
 
-        cv["onRuntimeInitialized"] = () => {
-          openCvListo = true;
-          setEstado("OpenCV.js cargado. Puedes iniciar cámara y cargar modelo.");
-          intentarIniciarPrediccionAutomatica();
-          console.log("OpenCV.js listo");
-        };
+        const pendientes = [];
+
+        if (!modelo) pendientes.push("modelo");
+        if (!openCvListo) pendientes.push("OpenCV.js");
+        if (!camaraActiva) pendientes.push("cámara");
+
+        setEstado(
+          "Pendiente: " + pendientes.join(", ") + "."
+        );
       }
 
-      // =========================
-      // Cargar modelo TensorFlow.js
-      // =========================
+      // =========================================================
+      // OpenCV.js
+      // =========================================================
+
+      function marcarOpenCvComoListo() {
+        if (openCvListo) {
+          return;
+        }
+
+        openCvListo = true;
+
+        console.log("OpenCV.js listo.");
+        actualizarEstadoPreparacion();
+        intentarIniciarPrediccionAutomatica();
+      }
+
+      async function onOpenCvLoaded() {
+        try {
+          if (!window.cv) {
+            throw new Error("No se encontró el objeto global cv.");
+          }
+
+          // Algunas versiones entregan cv como una promesa.
+          if (typeof window.cv.then === "function") {
+            window.cv = await window.cv;
+          }
+
+          if (window.cv.Mat) {
+            marcarOpenCvComoListo();
+          } else {
+            window.cv.onRuntimeInitialized = marcarOpenCvComoListo;
+          }
+        } catch (error) {
+          console.error("Error al cargar OpenCV.js:", error);
+          setEstado("OpenCV.js no se pudo cargar.", "error");
+        }
+      }
+
+      // =========================================================
+      // Modelo TensorFlow.js
+      // =========================================================
 
       async function cargarModelo() {
-        try {
-          setEstado("Cargando modelo...");
-
-          modelo = await tf.loadLayersModel(MODEL_PATH);
-
-          // Prueba rápida de forma esperada
-          const prueba = tf.zeros([1, INPUT_SIZE, INPUT_SIZE, 1]);
-          const salida = modelo.predict(prueba);
-
-          await salida.data();
-
-          prueba.dispose();
-          salida.dispose();
-
-          setEstado("Modelo cargado correctamente.");
-          intentarIniciarPrediccionAutomatica();
-          console.log("Modelo cargado:", modelo);
-        } catch (error) {
-          console.error(error);
-          alert("Error al cargar modelo: " + error.message);
-          setEstado("Error al cargar modelo.");
-        }
-      }
-
-      // =========================
-      // Cámara
-      // =========================
-
-      function mostrarCamara() {
-        const opciones = {
-          audio: false,
-          video: {
-            facingMode: facingMode,
-            width: TAMANO_CAMARA,
-            height: TAMANO_CAMARA
-          }
-        };
-
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          alert("Tu navegador no soporta getUserMedia.");
+        if (cargandoModelo) {
           return;
         }
 
-        navigator.mediaDevices.getUserMedia(opciones)
-          .then(function(stream) {
-            currentStream = stream;
-            video.srcObject = currentStream;
-            camaraActiva = true;
-            setEstado("Cámara iniciada.");
-            procesarCamara();
-            intentarIniciarPrediccionAutomatica();
-          })
-          .catch(function(err) {
-            console.error(err);
-            alert("No se pudo utilizar la cámara.");
-            setEstado("Error al iniciar cámara.");
-          });
+        cargandoModelo = true;
+        btnModelo.disabled = true;
+
+        try {
+          setEstado("Cargando modelo y etiquetas...");
+
+          if (modelo) {
+            modelo.dispose();
+            modelo = null;
+          }
+
+          const [modeloCargado, respuestaEtiquetas] = await Promise.all([
+            tf.loadLayersModel(MODEL_PATH),
+            fetch(LABELS_PATH)
+          ]);
+
+          if (!respuestaEtiquetas.ok) {
+            throw new Error(
+              `No se pudo cargar labels.json. Estado HTTP: ${respuestaEtiquetas.status}`
+            );
+          }
+
+          const etiquetasCargadas = await respuestaEtiquetas.json();
+
+          if (
+            !Array.isArray(etiquetasCargadas) ||
+            etiquetasCargadas.length !== 10
+          ) {
+            throw new Error(
+              "labels.json debe contener exactamente 10 etiquetas."
+            );
+          }
+
+          const formaEntrada = modeloCargado.inputs[0].shape;
+          const formaSalida = modeloCargado.outputs[0].shape;
+
+          if (
+            formaEntrada.length !== 4 ||
+            formaEntrada[1] !== INPUT_SIZE ||
+            formaEntrada[2] !== INPUT_SIZE ||
+            formaEntrada[3] !== 1
+          ) {
+            modeloCargado.dispose();
+
+            throw new Error(
+              `El modelo no espera imágenes [64, 64, 1]. Forma encontrada: ${formaEntrada}`
+            );
+          }
+
+          if (formaSalida[1] !== etiquetasCargadas.length) {
+            modeloCargado.dispose();
+
+            throw new Error(
+              "La cantidad de salidas del modelo no coincide con labels.json."
+            );
+          }
+
+          modelo = modeloCargado;
+          CLASES = etiquetasCargadas.map(String);
+
+          // Primera predicción para preparar internamente el modelo.
+          const prueba = tf.zeros([1, INPUT_SIZE, INPUT_SIZE, 1]);
+          const salidaPrueba = modelo.predict(prueba);
+
+          await salidaPrueba.data();
+
+          prueba.dispose();
+          salidaPrueba.dispose();
+
+          console.log("Modelo cargado correctamente.");
+          console.log("Entrada esperada:", formaEntrada);
+          console.log("Salida esperada:", formaSalida);
+          console.log("Etiquetas:", CLASES);
+
+          setEstado("Modelo y etiquetas cargados correctamente.", "listo");
+
+          intentarIniciarPrediccionAutomatica();
+        } catch (error) {
+          console.error("Error al cargar el modelo:", error);
+
+          modelo = null;
+          CLASES = [];
+
+          setEstado("Error al cargar el modelo.", "error");
+
+          alert(
+            "Error al cargar el modelo: " +
+            error.message
+          );
+        } finally {
+          cargandoModelo = false;
+          btnModelo.disabled = false;
+          actualizarEstadoPreparacion();
+        }
       }
 
-      function cambiarCamara() {
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
+      // =========================================================
+      // Cámara
+      // =========================================================
+
+      function detenerCamara() {
+        camaraActiva = false;
+
+        if (frameRequestId !== null) {
+          cancelAnimationFrame(frameRequestId);
+          frameRequestId = null;
         }
 
-        facingMode = facingMode === "user" ? "environment" : "user";
-        mostrarCamara();
+        if (intervaloPrediccion !== null) {
+          clearInterval(intervaloPrediccion);
+          intervaloPrediccion = null;
+        }
+
+        if (currentStream) {
+          currentStream
+            .getTracks()
+            .forEach((track) => track.stop());
+
+          currentStream = null;
+        }
+
+        video.srcObject = null;
+      }
+
+      async function mostrarCamara() {
+        try {
+          detenerCamara();
+
+          setEstado("Solicitando acceso a la cámara...");
+
+          if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+          ) {
+            throw new Error(
+              "El navegador no soporta acceso a la cámara."
+            );
+          }
+
+          const opciones = {
+            audio: false,
+            video: {
+              facingMode: {
+                ideal: facingMode
+              },
+              width: {
+                ideal: 640
+              },
+              height: {
+                ideal: 480
+              }
+            }
+          };
+
+          currentStream =
+            await navigator.mediaDevices.getUserMedia(opciones);
+
+          video.srcObject = currentStream;
+
+          await new Promise((resolve) => {
+            if (video.readyState >= 1) {
+              resolve();
+            } else {
+              video.onloadedmetadata = () => resolve();
+            }
+          });
+
+          await video.play();
+
+          camaraActiva = true;
+
+          procesarCamara();
+          actualizarEstadoPreparacion();
+          intentarIniciarPrediccionAutomatica();
+        } catch (error) {
+          console.error("Error al iniciar cámara:", error);
+
+          detenerCamara();
+          setEstado("Error al iniciar cámara.", "error");
+
+          alert(
+            "No se pudo utilizar la cámara: " +
+            error.message
+          );
+        }
+      }
+
+      async function cambiarCamara() {
+        facingMode =
+          facingMode === "user"
+            ? "environment"
+            : "user";
+
+        await mostrarCamara();
       }
 
       function procesarCamara() {
-        if (!camaraActiva) return;
-
-        if (video.readyState >= VIDEO_CON_DATOS) {
-          ctx.drawImage(video, 0, 0, TAMANO_CAMARA, TAMANO_CAMARA);
-        }
-
-        requestAnimationFrame(procesarCamara);
-      }
-
-      // =========================
-      // Preprocesamiento con OpenCV.js
-      // =========================
-
-      function preprocesarImagen() {
-        if (!openCvListo) {
-          throw new Error("OpenCV.js todavía no está listo.");
-        }
-
-        // Leer canvas principal como matriz OpenCV
-        let src = cv.imread(canvas);
-
-        // Convertir a escala de grises
-        let gray = new cv.Mat();
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-        // Redimensionar a 64x64
-        let resized = new cv.Mat();
-        let dsize = new cv.Size(INPUT_SIZE, INPUT_SIZE);
-        cv.resize(gray, resized, dsize, 0, 0, cv.INTER_AREA);
-
-        // Mostrar imagen procesada en pantalla
-        cv.imshow(canvasProcesado, resized);
-
-        // Leer pixeles del canvas procesado
-        let imgData = ctxProcesado.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-
-        let valores = new Float32Array(INPUT_SIZE * INPUT_SIZE);
-
-        for (let i = 0, j = 0; i < imgData.data.length; i += 4, j++) {
-          // Como está en escala de grises, R, G y B deberían ser similares.
-          // Usamos el canal rojo y normalizamos dividiendo por 255.
-          valores[j] = imgData.data[i] / 255.0;
-        }
-
-        // Limpiar memoria OpenCV
-        src.delete();
-        gray.delete();
-        resized.delete();
-
-        // Crear tensor con la forma exacta que espera el modelo: [1, 64, 64, 1]
-        return tf.tensor4d(valores, [1, INPUT_SIZE, INPUT_SIZE, 1]);
-      }
-
-      // =========================
-      // Predicción
-      // =========================
-
-      function intentarIniciarPrediccionAutomatica() {
-        if (intervaloPrediccion || !openCvListo || !modelo || !camaraActiva) {
+        if (!camaraActiva) {
           return;
         }
 
-        intervaloPrediccion = setInterval(predecirAutomaticamente, INTERVALO_PREDICCION_MS);
-        setEstado("Predicción automática activa.");
+        if (
+          video.readyState >= VIDEO_CON_DATOS &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0
+        ) {
+          const anchoVideo = video.videoWidth;
+          const altoVideo = video.videoHeight;
+
+          // Obtiene un recorte cuadrado desde el centro sin deformar.
+          const lado = Math.min(anchoVideo, altoVideo);
+          const origenX = (anchoVideo - lado) / 2;
+          const origenY = (altoVideo - lado) / 2;
+
+          ctx.drawImage(
+            video,
+            origenX,
+            origenY,
+            lado,
+            lado,
+            0,
+            0,
+            TAMANO_CAMARA,
+            TAMANO_CAMARA
+          );
+        }
+
+        frameRequestId =
+          requestAnimationFrame(procesarCamara);
+      }
+
+      // =========================================================
+      // Preprocesamiento con OpenCV.js
+      // =========================================================
+
+      function preprocesarImagen() {
+        if (!openCvListo) {
+          throw new Error(
+            "OpenCV.js todavía no está listo."
+          );
+        }
+
+        let src = null;
+        let roi = null;
+        let gray = null;
+        let resized = null;
+
+        try {
+          src = cv.imread(canvas);
+
+          const tamanoRoi = Math.round(
+            TAMANO_CAMARA * PROPORCION_ROI
+          );
+
+          const inicioX = Math.floor(
+            (TAMANO_CAMARA - tamanoRoi) / 2
+          );
+
+          const inicioY = Math.floor(
+            (TAMANO_CAMARA - tamanoRoi) / 2
+          );
+
+          const rectangulo = new cv.Rect(
+            inicioX,
+            inicioY,
+            tamanoRoi,
+            tamanoRoi
+          );
+
+          roi = src.roi(rectangulo);
+
+          gray = new cv.Mat();
+
+          cv.cvtColor(
+            roi,
+            gray,
+            cv.COLOR_RGBA2GRAY
+          );
+
+          resized = new cv.Mat();
+
+          cv.resize(
+            gray,
+            resized,
+            new cv.Size(INPUT_SIZE, INPUT_SIZE),
+            0,
+            0,
+            cv.INTER_AREA
+          );
+
+          // Muestra exactamente la imagen enviada al modelo.
+          cv.imshow(canvasProcesado, resized);
+
+          const valores = new Float32Array(
+            INPUT_SIZE * INPUT_SIZE
+          );
+
+          for (
+            let indice = 0;
+            indice < resized.data.length;
+            indice += 1
+          ) {
+            valores[indice] =
+              resized.data[indice] / 255.0;
+          }
+
+          return tf.tensor4d(
+            valores,
+            [1, INPUT_SIZE, INPUT_SIZE, 1]
+          );
+        } finally {
+          if (resized) resized.delete();
+          if (gray) gray.delete();
+          if (roi) roi.delete();
+          if (src) src.delete();
+        }
+      }
+
+      // =========================================================
+      // Predicción
+      // =========================================================
+
+      function intentarIniciarPrediccionAutomatica() {
+        if (
+          intervaloPrediccion !== null ||
+          !openCvListo ||
+          !modelo ||
+          !camaraActiva
+        ) {
+          return;
+        }
+
+        intervaloPrediccion = setInterval(
+          predecirAutomaticamente,
+          INTERVALO_PREDICCION_MS
+        );
+
+        setEstado("Predicción automática activa.", "listo");
         predecirAutomaticamente();
       }
 
@@ -366,19 +713,23 @@
         prediccionEnCurso = true;
 
         try {
-          await predecir({ silenciarAlertas: true });
+          await predecir({
+            silenciarAlertas: true
+          });
         } finally {
           prediccionEnCurso = false;
         }
       }
 
       async function predecir(opciones = {}) {
-        const silenciarAlertas = opciones.silenciarAlertas === true;
+        const silenciarAlertas =
+          opciones.silenciarAlertas === true;
 
         if (!modelo) {
           if (!silenciarAlertas) {
             alert("Primero debes cargar el modelo.");
           }
+
           return null;
         }
 
@@ -386,6 +737,7 @@
           if (!silenciarAlertas) {
             alert("Primero debes iniciar la cámara.");
           }
+
           return null;
         }
 
@@ -393,6 +745,7 @@
           if (!silenciarAlertas) {
             alert("OpenCV.js todavía no está listo.");
           }
+
           return null;
         }
 
@@ -400,16 +753,19 @@
           return null;
         }
 
+        let tensor = null;
+        let salida = null;
+
         try {
-          const tensor = preprocesarImagen();
+          tensor = preprocesarImagen();
+          salida = modelo.predict(tensor);
 
-          const salida = modelo.predict(tensor);
-          const datos = Array.from(await salida.data());
-
-          tensor.dispose();
-          salida.dispose();
+          const datos = Array.from(
+            await salida.data()
+          );
 
           const resultado = obtenerResultado(datos);
+
           ultimaPrediccion = resultado;
 
           mostrarResultado(resultado, datos);
@@ -417,23 +773,50 @@
 
           return resultado;
         } catch (error) {
-          console.error(error);
+          console.error("Error durante la predicción:", error);
+
           if (!silenciarAlertas) {
-            alert("Error al predecir: " + error.message);
+            alert(
+              "Error al predecir: " +
+              error.message
+            );
           }
-          setEstado("Error durante la predicción.");
+
+          setEstado("Error durante la predicción.", "error");
+
           return null;
+        } finally {
+          if (tensor) tensor.dispose();
+          if (salida) salida.dispose();
         }
       }
 
       function obtenerResultado(probabilidades) {
+        if (
+          !Array.isArray(probabilidades) ||
+          probabilidades.length !== CLASES.length
+        ) {
+          throw new Error(
+            "La salida del modelo no coincide con las etiquetas."
+          );
+        }
+
         let indiceMayor = 0;
         let confianzaMayor = probabilidades[0];
 
-        for (let i = 1; i < probabilidades.length; i++) {
-          if (probabilidades[i] > confianzaMayor) {
-            confianzaMayor = probabilidades[i];
-            indiceMayor = i;
+        for (
+          let indice = 1;
+          indice < probabilidades.length;
+          indice += 1
+        ) {
+          if (
+            probabilidades[indice] >
+            confianzaMayor
+          ) {
+            confianzaMayor =
+              probabilidades[indice];
+
+            indiceMayor = indice;
           }
         }
 
@@ -445,84 +828,153 @@
       }
 
       function mostrarResultado(resultado, probabilidades) {
-        document.getElementById("resultado").innerText = resultado.clase;
+        document.getElementById("resultado").innerText =
+          resultado.clase;
+
         document.getElementById("confianza").innerText =
-          "Confianza: " + (resultado.confianza * 100).toFixed(2) + "%";
+          "Confianza: " +
+          (resultado.confianza * 100).toFixed(2) +
+          "%";
 
         const top3 = probabilidades
-          .map((prob, index) => ({
-            clase: CLASES[index],
-            prob: prob
+          .map((probabilidad, indice) => ({
+            clase: CLASES[indice],
+            probabilidad
           }))
-          .sort((a, b) => b.prob - a.prob)
+          .sort(
+            (a, b) =>
+              b.probabilidad - a.probabilidad
+          )
           .slice(0, 3);
 
         let html = "";
 
-        top3.forEach(item => {
+        top3.forEach((item) => {
           html += `
             <div class="mb-2">
               <strong>Dígito ${item.clase}</strong>:
-              ${(item.prob * 100).toFixed(2)}%
+              ${(item.probabilidad * 100).toFixed(2)}%
             </div>
           `;
         });
 
-        if (resultado.confianza < CONFIANZA_MINIMA) {
+        if (
+          resultado.confianza <
+          CONFIANZA_MINIMA
+        ) {
           html += `
             <div class="alert alert-warning mt-3 mb-0">
-              Confianza baja. Intenta mejorar la iluminación, centrar la mano y usar un fondo limpio.
+              Confianza baja. Mejora la iluminación, centra la mano y
+              utiliza un fondo limpio.
             </div>
           `;
         }
 
-        document.getElementById("top3").innerHTML = html;
+        document.getElementById("top3").innerHTML =
+          html;
       }
 
-      // =========================
+      // =========================================================
       // Modo práctica
-      // =========================
+      // =========================================================
 
       function nuevoNumero() {
-        numeroActual = Math.floor(Math.random() * 10).toString();
+        numeroActual =
+          Math.floor(Math.random() * 10).toString();
 
-        document.getElementById("numeroSolicitado").innerText = numeroActual;
-        document.getElementById("resultadoPractica").innerText =
-          "Realiza el signo solicitado. La app comprobará automáticamente.";
+        document.getElementById(
+          "numeroSolicitado"
+        ).innerText = numeroActual;
+
+        document.getElementById(
+          "resultadoPractica"
+        ).innerText =
+          "Realiza el signo solicitado. La aplicación lo comprobará automáticamente.";
       }
 
       function evaluarPractica(resultado) {
-        if (numeroActual === null) {
+        if (
+          numeroActual === null ||
+          !resultado
+        ) {
           return;
         }
 
-        if (!resultado) return;
+        const textoResultado =
+          document.getElementById(
+            "resultadoPractica"
+          );
 
-        const textoResultado = document.getElementById("resultadoPractica");
-
-        if (resultado.confianza < CONFIANZA_MINIMA) {
+        if (
+          resultado.confianza <
+          CONFIANZA_MINIMA
+        ) {
           textoResultado.innerText =
-            "Predicción poco confiable. Intenta nuevamente con mejor iluminación o fondo más limpio.";
+            "Predicción poco confiable. Intenta nuevamente con mejor iluminación o un fondo más limpio.";
+
           return;
         }
 
-        if (resultado.clase === numeroActual) {
+        if (
+          resultado.clase ===
+          numeroActual
+        ) {
           textoResultado.innerText =
-            "Correcto. Se pidió " + numeroActual + " y el modelo predijo " + resultado.clase + ".";
+            `Correcto. Se pidió ${numeroActual} y el modelo predijo ${resultado.clase}.`;
+
           numeroActual = null;
         } else {
           textoResultado.innerText =
-            "Incorrecto. Se pidió " + numeroActual + ", pero el modelo predijo " + resultado.clase + ".";
+            `Incorrecto. Se pidió ${numeroActual}, pero el modelo predijo ${resultado.clase}.`;
         }
       }
 
-      // =========================
-      // Inicio automático parcial
-      // =========================
+      // =========================================================
+      // Inicio y limpieza
+      // =========================================================
 
-      window.onload = function() {
-        setEstado("Página cargada. Esperando OpenCV.js...");
-      };
+      btnIniciar.addEventListener(
+        "click",
+        mostrarCamara
+      );
+
+      btnCambiar.addEventListener(
+        "click",
+        cambiarCamara
+      );
+
+      btnModelo.addEventListener(
+        "click",
+        cargarModelo
+      );
+
+      btnNuevoNumero.addEventListener(
+        "click",
+        nuevoNumero
+      );
+
+      window.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          setEstado(
+            "Página cargada. Cargando modelo y OpenCV.js..."
+          );
+
+          cargarModelo();
+        }
+      );
+
+      window.addEventListener(
+        "beforeunload",
+        () => {
+          detenerCamara();
+
+          if (modelo) {
+            modelo.dispose();
+            modelo = null;
+          }
+        }
+      );
     </script>
   </body>
 </html>
