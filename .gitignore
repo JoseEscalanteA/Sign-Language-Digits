@@ -10,9 +10,6 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Jupyter
-.ipynb_checkpoints/
-
 # TensorBoard
 **/logs/
 **/tensorboard/
@@ -21,6 +18,3 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Datos grandes
-**/data/**/*.npy
-**/data/raw/
