@@ -24,8 +24,3 @@ Thumbs.db
 # Datos grandes
 **/data/**/*.npy
 **/data/raw/
-
-# Modelos entrenados
-**/models/**/*.keras
-**/models/**/*.h5
-**/models/**/*.bin
