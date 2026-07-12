@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diagnóstico del modelo TensorFlow.js</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, sans-serif;
+      background: #020617;
+      color: #f8fafc;
+    }
+    main {
+      width: min(720px, calc(100% - 32px));
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 24px;
+      background: #0f172a;
+    }
+    h1 { margin-top: 0; }
+    #status {
+      border-radius: 12px;
+      padding: 12px;
+      background: #111827;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+    .ok { color: #86efac; }
+    .error { color: #fde68a; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+</head>
+<body>
+  <main>
+    <h1>Diagnóstico del modelo</h1>
+    <p>Esta página no carga OpenCV. Solo prueba TensorFlow.js y el modelo.</p>
+    <div id="status">Iniciando...</div>
+  </main>
+
+  <script>
+    const status = document.querySelector('#status');
+
+    function write(text, className = '') {
+      status.className = className;
+      status.textContent = text;
+    }
+
+    async function run() {
+      const startedAt = performance.now();
+
+      try {
+        write('1. TensorFlow.js cargado\n2. Preparando backend...');
+
+        await tf.ready();
+
+        const backend = tf.getBackend();
+
+        write(
+          `1. TensorFlow.js listo (${tf.version.tfjs})\n` +
+          `2. Backend: ${backend}\n` +
+          '3. Cargando ./model/model.json...'
+        );
+
+        const loadStartedAt = performance.now();
+
+        const model = await tf.loadLayersModel(
+          './model/model.json'
+        );
+
+        const loadSeconds =
+          (performance.now() - loadStartedAt) / 1000;
+
+        const inputShape = model.inputs[0]?.shape;
+        const outputShape = model.outputs[0]?.shape;
+
+        write(
+          `Modelo descargado en ${loadSeconds.toFixed(2)} s\n` +
+          `Entrada: ${JSON.stringify(inputShape)}\n` +
+          `Salida: ${JSON.stringify(outputShape)}\n` +
+          'Ejecutando inferencia de prueba...'
+        );
+
+        const inferenceStartedAt = performance.now();
+
+        const result = tf.tidy(() => {
+          const input = tf.zeros([1, 64, 64, 1]);
+          const output = model.predict(input);
+          return Array.isArray(output)
+            ? output[0].dataSync()
+            : output.dataSync();
+        });
+
+        const inferenceMs =
+          performance.now() - inferenceStartedAt;
+
+        const totalSeconds =
+          (performance.now() - startedAt) / 1000;
+
+        write(
+          'MODELO CORRECTO Y FUNCIONAL\n\n' +
+          `TensorFlow.js: ${tf.version.tfjs}\n` +
+          `Backend: ${backend}\n` +
+          `Entrada: ${JSON.stringify(inputShape)}\n` +
+          `Salida: ${JSON.stringify(outputShape)}\n` +
+          `Clases devueltas: ${result.length}\n` +
+          `Carga: ${loadSeconds.toFixed(2)} s\n` +
+          `Primera inferencia: ${inferenceMs.toFixed(1)} ms\n` +
+          `Tiempo total: ${totalSeconds.toFixed(2)} s`,
+          'ok'
+        );
+
+        model.dispose();
+      } catch (error) {
+        console.error(error);
+
+        write(
+          'ERROR AL PROBAR EL MODELO\n\n' +
+          (error instanceof Error ? error.stack : String(error)),
+          'error'
+        );
+      }
+    }
+
+    void run();
+  </script>
+</body>
+</html>
