@@ -1,0 +1,165 @@
+<main class="min-h-screen bg-neutral-950 text-neutral-100">
+  <section class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-5 py-5">
+    <header class="flex items-center justify-between gap-4">
+      <div>
+        <p class="text-xs font-medium uppercase tracking-[0.28em] text-neutral-500">
+          Sign Language Digits
+        </p>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight text-white">
+          Reconocimiento de digitos
+        </h1>
+      </div>
+
+      <div class="hidden items-center gap-2 text-xs text-neutral-400 sm:flex">
+        <span class="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          {{ modelLoading ? 'Modelo cargando' : modelLoaded ? 'Modelo listo' : 'Modelo no disponible' }}
+        </span>
+        <span class="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          {{ cameraReady ? 'Camara activa' : 'Camara inactiva' }}
+        </span>
+      </div>
+    </header>
+
+    @if (errorMessage) {
+      <section class="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        {{ errorMessage }}
+      </section>
+    }
+
+    <section class="flex flex-1 flex-col justify-center gap-4">
+      <article class="relative aspect-video w-full overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
+        <video
+          #videoElement
+          class="h-full w-full object-cover"
+          [class.-scale-x-100]="config.mirrorCameraPreview"
+          autoplay
+          muted
+          playsinline
+        ></video>
+
+        @if (!cameraReady) {
+          <div class="absolute inset-0 grid place-items-center bg-black/80 p-8 text-center">
+            <div class="max-w-md">
+              <p class="text-2xl font-semibold text-white">Camara apagada</p>
+              <p class="mt-3 text-sm leading-6 text-neutral-400">
+                Activa la camara y coloca la mano izquierda dentro del recuadro. El modelo
+                se carga automaticamente al abrir la aplicacion.
+              </p>
+            </div>
+          </div>
+        }
+
+        <div class="pointer-events-none absolute left-5 top-5 max-w-[18rem] rounded-3xl border border-white/10 bg-black/55 p-4 shadow-xl backdrop-blur-md">
+          <p class="text-xs font-medium uppercase tracking-[0.22em] text-neutral-400">
+            Resultado
+          </p>
+
+          @if (prediction; as currentPrediction) {
+            <div class="mt-3 flex items-end gap-4">
+              <p class="text-7xl font-semibold leading-none text-white">
+                {{ currentPrediction.label }}
+              </p>
+              <div class="pb-1">
+                <p class="text-xs text-neutral-400">Confianza</p>
+                <p class="text-2xl font-semibold text-white">
+                  {{ formatConfidence(currentPrediction.confidence) }}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-x-3 gap-y-2">
+              @for (score of currentPrediction.scores; track score.label) {
+                <div>
+                  <div class="mb-1 flex justify-between text-[0.7rem] text-neutral-400">
+                    <span>{{ score.label }}</span>
+                    <span>{{ formatConfidence(score.confidence) }}</span>
+                  </div>
+                  <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      class="h-full rounded-full bg-white"
+                      [style.width.%]="confidencePercent(score.confidence)"
+                    ></div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="mt-3 text-sm leading-6 text-neutral-300">
+              @if (modelLoading) {
+                Cargando modelo...
+              } @else if (!modelLoaded) {
+                {{ missingModelMessage }}
+              } @else {
+                Activa la camara para comenzar.
+              }
+            </p>
+          }
+        </div>
+
+        <div class="pointer-events-none absolute left-[8%] top-1/2 aspect-square h-[58%] -translate-y-1/2 rounded-[1.75rem] border-2 border-white shadow-[0_0_0_999px_rgba(0,0,0,0.16)]">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-neutral-950">
+            Mano izquierda aqui
+          </div>
+          <div class="absolute inset-3 rounded-[1.15rem] border border-white/25"></div>
+        </div>
+
+        <div class="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
+          <p class="max-w-xl rounded-2xl border border-white/10 bg-black/55 px-4 py-3 text-sm text-neutral-300 backdrop-blur-md">
+            {{ cameraMessage }}
+          </p>
+          <div class="pointer-events-auto hidden rounded-2xl border border-white/10 bg-black/55 p-3 text-xs text-neutral-400 backdrop-blur-md md:block">
+            <p class="mb-2 font-medium uppercase tracking-[0.2em] text-neutral-500">Entrada al modelo</p>
+            <canvas
+              #modelInputCanvas
+              width="64"
+              height="64"
+              class="size-24 rounded-xl border border-white/10 bg-black [image-rendering:pixelated]"
+            ></canvas>
+            <p class="mt-2 text-[0.68rem] text-neutral-500">
+              {{ config.inputWidth }}x{{ config.inputHeight }} gris
+            </p>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="rounded-full border px-3 py-1.5 text-[0.68rem] font-medium transition"
+                [class.border-white]="config.preprocessingMode === 'normal'"
+                [class.bg-white]="config.preprocessingMode === 'normal'"
+                [class.text-neutral-950]="config.preprocessingMode === 'normal'"
+                [class.border-white/15]="config.preprocessingMode !== 'normal'"
+                [class.text-neutral-300]="config.preprocessingMode !== 'normal'"
+                (click)="setPreprocessingMode('normal')"
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                class="rounded-full border px-3 py-1.5 text-[0.68rem] font-medium transition"
+                [class.border-white]="config.preprocessingMode === 'local-contrast'"
+                [class.bg-white]="config.preprocessingMode === 'local-contrast'"
+                [class.text-neutral-950]="config.preprocessingMode === 'local-contrast'"
+                [class.border-white/15]="config.preprocessingMode !== 'local-contrast'"
+                [class.text-neutral-300]="config.preprocessingMode !== 'local-contrast'"
+                (click)="setPreprocessingMode('local-contrast')"
+              >
+                Contraste
+              </button>
+            </div>
+            <p class="mt-2 text-[0.68rem] text-neutral-500">
+              Suavizado: {{ config.predictionSmoothingWindow }} frames
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <div class="flex items-center justify-center">
+        <button
+          type="button"
+          class="rounded-full bg-white px-7 py-3 text-sm font-semibold text-neutral-950 shadow-lg shadow-black/30 transition hover:bg-neutral-200"
+          (click)="toggleCamera()"
+        >
+          {{ cameraReady ? 'Detener camara' : 'Activar camara' }}
+        </button>
+      </div>
+    </section>
+  </section>
+</main>

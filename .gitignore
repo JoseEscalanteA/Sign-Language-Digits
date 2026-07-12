@@ -1,6 +1,31 @@
-.venv-tfjs/
-.env/
+# Entornos virtuales
+.venv/
+.venv-*/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Jupyter
 .ipynb_checkpoints/
 
+# TensorBoard
+**/logs/
+**/tensorboard/
+
+# Archivos temporales
+.DS_Store
+Thumbs.db
+
+# Datos grandes
+**/data/**/*.npy
+**/data/raw/
+
+# Modelos entrenados
+**/models/**/*.keras
+**/models/**/*.h5
+**/models/**/*.bin

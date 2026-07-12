@@ -1,0 +1,2 @@
+Modelo,Semilla,Cantidad_test,Test_accuracy,Test_accuracy_porcentaje,Test_loss_clasificacion,Penalizacion_L2,Test_loss_total,Ruta_modelo_final
+D - L2 1e-5,42,666,0.9909909963607788,99.09909963607788,0.03400912135839462,0.02025352045893669,0.054262641817331314,C:\Users\Bastian\Desktop\Universidad\NOVENO SEMESTRE\IA\TALLER 3\regularizacion\models\v3\final\modelo_final_L2_1e5_v3.keras
