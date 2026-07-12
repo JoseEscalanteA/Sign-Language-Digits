@@ -3,50 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign Language Digits - CNN</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Sign Language Digits</title>
+  <link rel="stylesheet" href="styles.css?v=2026071202" />
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 </head>
 <body>
-  <main class="container">
-    <header>
-      <h1>Reconocimiento de Dígitos en Lenguaje de Señas</h1>
-      <p>Aplicación web basada en TensorFlow.js y OpenCV.js para usar el modelo CNN entrenado.</p>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Sign Language Digits</p>
+        <h1>Reconocimiento de digitos</h1>
+      </div>
+      <div class="status-chips" aria-label="Estado de la aplicacion">
+        <span id="modelStatus" class="chip">Modelo cargando</span>
+        <span id="cvStatus" class="chip">OpenCV cargando</span>
+        <span id="cameraStatus" class="chip">Camara inactiva</span>
+      </div>
     </header>
 
-    <section class="status-card">
-      <p><strong>Estado:</strong> <span id="status">Cargando librerías...</span></p>
-      <button id="startBtn" disabled>Iniciar cámara</button>
-      <button id="stopBtn" disabled>Detener</button>
-    </section>
+    <section class="camera-stage">
+      <video id="video" autoplay muted playsinline></video>
 
-    <section class="grid">
-      <div class="panel">
-        <h2>Cámara</h2>
-        <div class="video-wrap">
-          <video id="video" autoplay muted playsinline></video>
-          <div class="roi-box"></div>
+      <div id="cameraPlaceholder" class="camera-placeholder">
+        <div>
+          <strong>Camara apagada</strong>
+          <p>Activa la camara y coloca la mano dentro del recuadro.</p>
         </div>
-        <p class="hint">Ubica la mano dentro del recuadro central.</p>
       </div>
 
-      <div class="panel">
-        <h2>Preprocesamiento</h2>
+      <aside class="result-card">
+        <p class="panel-title">Resultado</p>
+        <div class="result-main">
+          <strong id="prediction">-</strong>
+          <div>
+            <span>Confianza</span>
+            <b id="confidence">-</b>
+          </div>
+        </div>
+        <div id="scoresGrid" class="scores-grid"></div>
+      </aside>
+
+      <div id="roiBox" class="roi-box">
+        <span>Mano izquierda aqui</span>
+        <i></i>
+      </div>
+
+      <aside class="input-panel">
+        <p class="panel-title">Entrada al modelo</p>
         <canvas id="roiCanvas" width="64" height="64"></canvas>
-        <p class="hint">Imagen procesada con OpenCV.js: recorte, escala de grises, redimensionamiento a 64x64 y normalización.</p>
-      </div>
+        <p class="canvas-caption">64x64 gris</p>
+        <div class="mode-switch" role="group" aria-label="Preprocesamiento">
+          <button id="normalModeBtn" class="mode-button active" type="button">Normal</button>
+          <button id="contrastModeBtn" class="mode-button" type="button">Contraste</button>
+        </div>
+        <p id="modeInfo" class="mode-info">Entrada igual al entrenamiento: gris / 255.</p>
+        <p class="mode-info">Suavizado adaptativo: 3 frames</p>
+      </aside>
 
-      <div class="panel result">
-        <h2>Predicción</h2>
-        <div id="prediction">-</div>
-        <div id="confidence">Confianza: -</div>
-        <ol id="topPredictions"></ol>
-      </div>
+      <p id="status" class="status-message">Cargando modelo y OpenCV.js...</p>
     </section>
+
+    <div class="camera-controls">
+      <button id="cameraBtn" class="camera-button" type="button" disabled>Activar camara</button>
+    </div>
   </main>
 
   <canvas id="hiddenCanvas" class="hidden"></canvas>
-  <script src="app.js?v=2026070104"></script>
+  <script src="app.js?v=2026071203"></script>
 </body>
 </html>

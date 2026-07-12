@@ -1,46 +1,26 @@
-# Aplicación Sign Language Digits
+# Sign Language Digits App
 
-Aplicación web para probar el modelo CNN entrenado con Sign Language Digits. Usa TensorFlow.js para cargar el modelo exportado y OpenCV.js para procesar la imagen de la cámara.
+Aplicacion web simple con interfaz inmersiva, OpenCV.js y TensorFlow.js.
 
-## Archivos principales
-
-- `index.html`: interfaz web.
-- `styles.css`: estilos visuales.
-- `app.js`: carga del modelo, cámara, preprocesamiento con OpenCV.js y predicción.
-- `modelos/tfjs_model/model.json`: estructura del modelo para TensorFlow.js.
-- `modelos/tfjs_model/group1-shard*.bin`: pesos del modelo.
-
-## Cómo ejecutar
-
-La cámara no funciona correctamente abriendo el archivo con doble clic. Debe ejecutarse con servidor local:
+## Ejecutar
 
 ```bash
-cd app
+cd App
 python -m http.server 8000
 ```
 
-Luego abrir:
+Abrir `http://localhost:8000`.
 
-```text
-http://localhost:8000
-```
+## Entrada del modelo
 
-## Preprocesamiento usado
+El modo inicial `Normal` replica el entrenamiento final:
 
-1. Captura del frame desde la cámara.
-2. Recorte de región central.
-3. Conversión a escala de grises con `cv.cvtColor`.
-4. Redimensionamiento a `64x64` con `cv.resize`.
-5. Visualización con `cv.imshow`.
-6. Normalización a `[0,1]`.
-7. Predicción con TensorFlow.js.
+- Recorte coincidente con el recuadro visible.
+- Entrada espejada para coincidir visualmente con la camara y las imagenes de entrenamiento.
+- Escala de grises.
+- Redimensionamiento a `64x64`.
+- Division de pixeles por `255`.
+- Tensor `[1,64,64,1]`.
+- Clases `[0,1,2,3,4,5,6,7,8,9]`.
 
-## Orden de etiquetas
-
-El modelo incluido usa el orden:
-
-```text
-["9", "0", "7", "6", "1", "8", "4", "3", "2", "5"]
-```
-
-Ese orden coincide con `Y.npy` usado por el notebook original. No cambiarlo en `app.js` salvo que el modelo se reentrene con otro orden de etiquetas.
+`Contraste` aplica normalizacion min-max con OpenCV como opcion experimental. No se aplica segmentacion de piel obligatoria porque puede eliminar partes de los dedos bajo iluminacion variable.
