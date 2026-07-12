@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign Language Digits</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Taller 3 · OpenCV.js + TensorFlow.js</p>
+        <h1>Reconocimiento de dígitos en lengua de señas</h1>
+      </div>
+
+      <div class="status-list">
+        <span id="opencvStatus" class="status">OpenCV cargando</span>
+        <span id="modelStatus" class="status">Modelo cargando</span>
+        <span id="cameraStatus" class="status">Cámara apagada</span>
+      </div>
+    </header>
+
+    <section id="errorBox" class="error hidden" role="alert"></section>
+
+    <section class="workspace">
+      <article class="camera-card">
+        <video id="video" autoplay muted playsinline></video>
+
+        <div class="roi-box" aria-hidden="true">
+          <span>Mano izquierda aquí</span>
+        </div>
+
+        <section class="prediction-panel">
+          <p class="label">Resultado</p>
+          <div class="prediction-main">
+            <strong id="predictionLabel">—</strong>
+            <div>
+              <small>Confianza</small>
+              <p id="predictionConfidence">0.0%</p>
+            </div>
+          </div>
+          <p id="predictionMessage" class="prediction-message">
+            Esperando cámara y modelo.
+          </p>
+          <div id="scores" class="scores"></div>
+        </section>
+
+        <p id="cameraMessage" class="camera-message">
+          Activa la cámara y coloca la mano completa dentro del recuadro.
+        </p>
+      </article>
+
+      <aside class="side-panel">
+        <h2>Entrada real al modelo</h2>
+        <canvas id="modelInputCanvas" width="64" height="64"></canvas>
+
+        <dl>
+          <div>
+            <dt>OpenCV.js</dt>
+            <dd>Recorte, espejo, escala de grises y 64×64</dd>
+          </div>
+          <div>
+            <dt>TensorFlow.js</dt>
+            <dd>Inferencia del modelo CNN</dd>
+          </div>
+          <div>
+            <dt>Normalización</dt>
+            <dd>Píxel ÷ 255</dd>
+          </div>
+          <div>
+            <dt>Suavizado</dt>
+            <dd>Promedio de 5 frames</dd>
+          </div>
+        </dl>
+
+        <button id="toggleCameraButton" type="button">
+          Activar cámara
+        </button>
+      </aside>
+    </section>
+
+    <canvas id="captureCanvas" class="hidden"></canvas>
+  </main>
+</body>
+</html>

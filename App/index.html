@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Language Digits - CNN</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Reconocimiento de Dígitos en Lenguaje de Señas</h1>
+      <p>Aplicación web basada en TensorFlow.js y OpenCV.js para usar el modelo CNN entrenado.</p>
+    </header>
+
+    <section class="status-card">
+      <p><strong>Estado:</strong> <span id="status">Cargando librerías...</span></p>
+      <button id="startBtn" disabled>Iniciar cámara</button>
+      <button id="stopBtn" disabled>Detener</button>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Cámara</h2>
+        <div class="video-wrap">
+          <video id="video" autoplay muted playsinline></video>
+          <div class="roi-box"></div>
+        </div>
+        <p class="hint">Ubica la mano dentro del recuadro central.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Preprocesamiento</h2>
+        <canvas id="roiCanvas" width="64" height="64"></canvas>
+        <p class="hint">Imagen procesada con OpenCV.js: recorte, escala de grises, redimensionamiento a 64x64 y normalización.</p>
+      </div>
+
+      <div class="panel result">
+        <h2>Predicción</h2>
+        <div id="prediction">-</div>
+        <div id="confidence">Confianza: -</div>
+        <ol id="topPredictions"></ol>
+      </div>
+    </section>
+  </main>
+
+  <canvas id="hiddenCanvas" class="hidden"></canvas>
+  <script src="app.js?v=2026070104"></script>
+</body>
+</html>
